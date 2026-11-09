@@ -659,7 +659,9 @@ try{const l=localStorage.getItem('lang');LANG=l==='en'||l==='es'?l:(navigator.la
 let UNIT='BTC';try{if(localStorage.getItem('unit')==='WBTC')UNIT='WBTC'}catch(e){}
 const tu=v=>typeof v==='string'?v.replace(/\{U\}/g,UNIT):v;
 const T=()=>new Proxy(I18N[LANG],{get:(o,k)=>{const v=o[k];return typeof v==='function'?(...a)=>tu(v(...a)):tu(v)}});
-const fmt=(v,d=0)=>v.toLocaleString(T().loc,{maximumFractionDigits:d,minimumFractionDigits:d});
+// useGrouping:'always': en español también lleva separador con 4 cifras (9.243 $, no 9243 $). Los navegadores
+// sin soporte lo tratan como true y siguen formateando como antes. El CSV no usa fmt: guarda los números sin formato.
+const fmt=(v,d=0)=>v.toLocaleString(T().loc,{maximumFractionDigits:d,minimumFractionDigits:d,useGrouping:'always'});
 const usd=(v,d=0)=>LANG==='es'?`${fmt(v,d)} $`:(v<0?'−$'+fmt(-v,d):'$'+fmt(v,d));
 const pct=v=>{const r=Math.round(v)||0;return (r>0?'+':'')+fmt(r)+(LANG==='es'?' %':'%')}; // sin «-0 %»
 const fdate=(iso,add=0)=>new Date(Date.parse(iso)+add*864e5).toLocaleDateString(T().loc,{day:'numeric',month:'short',year:'numeric',timeZone:'UTC'});

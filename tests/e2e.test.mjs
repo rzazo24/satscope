@@ -429,7 +429,7 @@ async function expectedBt(cfg = DEF) {
   const R = o => ({ val: Math.round(o.val), inv: Math.round(o.inv) });
   return env.get('btCompare')(R(S), R(D));
 }
-const num = (v, loc) => v.toLocaleString(loc, { maximumFractionDigits: 0, minimumFractionDigits: 0 });
+const num = (v, loc) => v.toLocaleString(loc, { maximumFractionDigits: 0, minimumFractionDigits: 0, useGrouping: 'always' });
 
 test('Backtest: el dato principal es la diferencia de valor con el DCA fijo (ES y EN)', { skip }, async () => {
   const { diff: d, inv: di } = await expectedBt();
@@ -498,6 +498,34 @@ test('Backtest: la cifra principal es siempre la resta exacta de los «Valor hoy
       return out;
     })()`);
     assert.deepEqual(bad, []);
+    assert.deepEqual(p.errors, []);
+  } finally { await p.close(); }
+});
+
+test('Formato de números: separador de miles también con 4 cifras en español', { skip }, async () => {
+  const p = await open({ storage: { seenHelp: '1' } });
+  try {
+    // Casos fijos, sin depender de los datos: fmt(valor, decimales) y usd(valor, decimales)
+    const es = await p.ev("[fmt(9243),fmt(3570),fmt(999),fmt(1234567),fmt(1234.5,2),fmt(0.0001335,8),fmt(-1160),usd(9243),usd(3570,2)]");
+    assert.deepEqual(es, ['9.243', '3.570', '999', '1.234.567', '1.234,50', '0,00013350', '-1.160', '9.243 $', '3.570,00 $']);
+    // En la página: la tabla del backtest usa el separador en las cifras de 4 dígitos
+    const cells = await p.ev("[...document.querySelectorAll('#btTbl tbody td')].map(td=>td.textContent).filter(s=>/^\\d[\\d.]* \\$$/.test(s))");
+    assert.ok(cells.length > 0);
+    for (const c of cells) assert.match(c, /^\d{1,3}(\.\d{3})* \$$/, `sin separador: ${c}`);
+    await p.ev("document.querySelector('#langSeg [data-lang=en]').click()");
+    assert.deepEqual(await p.ev("[fmt(9243),fmt(999),fmt(1234.5,2),usd(9243)]"), ['9,243', '999', '1,234.50', '$9,243']);
+  } finally { await p.close(); }
+});
+
+test('El CSV guarda los números sin formato aunque la app muestre separadores de miles', { skip }, async () => {
+  const ledger = [{ id: 'a', d: '2026-01-05', type: 'buy', usd: 3570, btc: 0.0451, res: 0 }, { id: 'b', d: '2026-02-02', type: 'sell', usd: 1234.56, btc: 0.01, res: 0 }];
+  const p = await open({ storage: { seenHelp: '1', ledger: JSON.stringify(ledger) } });
+  try {
+    assert.match(await p.ev("document.getElementById('pfOps').textContent"), /3\.570,00/); // en pantalla, con separador
+    const csv = await p.ev('toCSV(LEDGER)');
+    assert.equal(csv, 'date,type,usd,btc,from_reserve\n2026-01-05,buy,3570,0.0451,0\n2026-02-02,sell,1234.56,0.01,0\n');
+    const back = await p.ev(`parseCSV(${JSON.stringify(csv)}).map(o=>[o.usd,o.btc])`);
+    assert.deepEqual(back, [[3570, 0.0451], [1234.56, 0.01]]);
     assert.deepEqual(p.errors, []);
   } finally { await p.close(); }
 });
