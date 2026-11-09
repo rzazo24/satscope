@@ -70,7 +70,7 @@ after(() => {
 });
 
 // Abre la página en un perfil limpio. `fail`: APIs caídas. `storage`: localStorage inicial.
-async function open({ fail = [], storage = {}, width = 390 } = {}) {
+async function open({ fail = [], storage = {}, width = 390, wbtc = null } = {}) {
   const { browserContextId } = await cdp.send('Target.createBrowserContext');
   const { targetId } = await cdp.send('Target.createTarget', { url: 'about:blank', browserContextId });
   const { sessionId } = await cdp.send('Target.attachToTarget', { targetId, flatten: true });
@@ -81,6 +81,15 @@ async function open({ fail = [], storage = {}, width = 390 } = {}) {
     if (d.method === 'Runtime.exceptionThrown') errors.push(d.params.exceptionDetails.exception?.description || d.params.exceptionDetails.text);
     if (d.method === 'Fetch.requestPaused') {
       const { requestId, request } = d.params;
+      if (/publicnode|1rpc|drpc/.test(request.url)) { // nodos de Polygon: saldo de WBTC simulado
+        if (wbtc == null) return s('Fetch.failRequest', { requestId, errorReason: 'ConnectionRefused' }).catch(() => {});
+        if (request.method === 'OPTIONS') // preflight de CORS, como responden los nodos reales
+          return s('Fetch.fulfillRequest', { requestId, responseCode: 204, responseHeaders: [{ name: 'Access-Control-Allow-Origin', value: '*' },
+            { name: 'Access-Control-Allow-Methods', value: 'POST, OPTIONS' }, { name: 'Access-Control-Allow-Headers', value: 'content-type' }] }).catch(() => {});
+        const body = JSON.stringify({ jsonrpc: '2.0', id: 1, result: '0x' + BigInt(Math.round(wbtc * 1e8)).toString(16).padStart(64, '0') });
+        return s('Fetch.fulfillRequest', { requestId, responseCode: 200, body: Buffer.from(body).toString('base64'),
+          responseHeaders: [{ name: 'Content-Type', value: 'application/json' }, { name: 'Access-Control-Allow-Origin', value: '*' }] }).catch(() => {});
+      }
       const r = respond(request.url, NOW, { fail });
       if (!r || r.status >= 500) return s('Fetch.failRequest', { requestId, errorReason: 'ConnectionRefused' }).catch(() => {});
       s('Fetch.fulfillRequest', { requestId, responseCode: r.status, body: Buffer.from(r.body).toString('base64'),
@@ -90,7 +99,7 @@ async function open({ fail = [], storage = {}, width = 390 } = {}) {
   await s('Runtime.enable');
   await s('Page.enable');
   await s('Emulation.setDeviceMetricsOverride', { width, height: 900, deviceScaleFactor: 1, mobile: true });
-  await s('Fetch.enable', { patterns: ['*api.binance.com*', '*bitstamp.net*', '*alternative.me*'].map(urlPattern => ({ urlPattern })) });
+  await s('Fetch.enable', { patterns: ['*api.binance.com*', '*bitstamp.net*', '*alternative.me*', '*publicnode.com*', '*1rpc.io*', '*drpc.org*'].map(urlPattern => ({ urlPattern })) });
   const ev = async expr => {
     const r = await s('Runtime.evaluate', { expression: expr, awaitPromise: true, returnByValue: true });
     if (r.exceptionDetails) throw new Error(r.exceptionDetails.exception?.description || r.exceptionDetails.text);
@@ -306,6 +315,63 @@ test('Restablecer la estrategia a los valores por defecto y deshacerlo', { skip 
     assert.equal(await val('base'), '25');
     assert.deepEqual(JSON.parse(await p.ev("localStorage.getItem('cfg')")), { base: 25, sellAt: 90, wF: 50 });
     assert.equal(await p.ev("document.getElementById('resetMsg').textContent"), '');
+    assert.deepEqual(p.errors, []);
+  } finally { await p.close(); }
+});
+
+test('WBTC en Polygon: textos con WBTC, saldo de la wallet y comparación con el registro', { skip }, async () => {
+  const addr = '0xAbCdEf0123456789aBcDeF0123456789ABCDEF01';
+  const ledger = [{ id: 'a', d: '2026-11-09', type: 'buy', usd: 10, btc: 0.0001335, res: 0 }];
+  const waitMsg = async (p, re) => { for (let i = 0; i < 50; i++) { const m = await p.ev("document.getElementById('walletMsg').textContent"); if (re.test(m)) return m; await wait(100); } return p.ev("document.getElementById('walletMsg').textContent"); };
+  // Coincide con el registro
+  const p = await open({ wbtc: 0.0001335, storage: { seenHelp: '1', unit: 'WBTC', wallet: addr, ledger: JSON.stringify(ledger) } });
+  try {
+    assert.equal(await p.ev("document.getElementById('unit').value"), 'WBTC');
+    assert.equal(await p.ev("document.getElementById('walletBox').hidden"), false);
+    assert.match(await waitMsg(p, /Coincide/), /En tu wallet: 0,00013350 WBTC\. Coincide con el registro\./);
+    assert.equal(await p.ev("document.querySelector('#pfStats .stat .n').textContent"), 'WBTC');
+    assert.equal(await p.ev("document.querySelector('#pfOps thead th:nth-child(4)').textContent"), 'WBTC');
+    // Venta: con el saldo de la wallet y en WBTC
+    await p.ev("(()=>{const s=document.getElementById('sellAt');s.value='0';s.dispatchEvent(new Event('input'))})()");
+    assert.match(await p.ev("document.getElementById('action').textContent"), /^Vende 0,000003 WBTC esta semana/); // 2 % de 0,0001335
+    assert.deepEqual(p.errors, []);
+  } finally { await p.close(); }
+  // No coincide: avisa de la diferencia y vende según la wallet
+  const q = await open({ wbtc: 0.0005, storage: { seenHelp: '1', unit: 'WBTC', wallet: addr, ledger: JSON.stringify(ledger), cfg: JSON.stringify({ sellAt: 0 }) } });
+  try {
+    assert.match(await waitMsg(q, /diferencia/), /en el registro: 0,00013350 \(diferencia: \+0,00036650\)/);
+    assert.match(await q.ev("document.getElementById('action').textContent"), /^Vende 0,000010 WBTC/); // 2 % de 0,0005
+    assert.deepEqual(q.errors, []);
+  } finally { await q.close(); }
+});
+
+test('WBTC: dirección inválida, nodos caídos y vuelta a BTC', { skip }, async () => {
+  const p = await open({ wbtc: null, storage: { seenHelp: '1', cfg: JSON.stringify({ sellAt: 0 }),
+    ledger: JSON.stringify([{ id: 'a', d: '2026-11-09', type: 'buy', usd: 10, btc: 0.01, res: 0 }]) } });
+  const msg = () => p.ev("document.getElementById('walletMsg').textContent");
+  try {
+    // Por defecto: BTC y sin campo de dirección
+    assert.equal(await p.ev("document.getElementById('walletBox').hidden"), true);
+    assert.match(await p.ev("document.getElementById('action').textContent"), /^Vende 0,000200 BTC/);
+    // Cambiar a WBTC
+    await p.ev("(()=>{const u=document.getElementById('unit');u.value='WBTC';u.dispatchEvent(new Event('change'))})()");
+    assert.equal(await p.ev("document.getElementById('walletBox').hidden"), false);
+    assert.match(await p.ev("document.getElementById('action').textContent"), /^Vende 0,000200 WBTC/);
+    // Dirección inválida
+    await p.ev("(()=>{const w=document.getElementById('wallet');w.value='0x123';w.dispatchEvent(new Event('input'))})()");
+    await wait(800);
+    assert.match(await msg(), /debe empezar por 0x/);
+    // Dirección válida pero ningún nodo responde: usa el registro
+    await p.ev("(()=>{const w=document.getElementById('wallet');w.value='0xAbCdEf0123456789aBcDeF0123456789ABCDEF01';w.dispatchEvent(new Event('input'))})()");
+    for (let i = 0; i < 50 && !/No se ha podido/.test(await msg()); i++) await wait(100);
+    assert.match(await msg(), /No se ha podido leer tu saldo/);
+    assert.match(await p.ev("document.getElementById('action').textContent"), /^Vende 0,000200 WBTC/);
+    assert.equal(await p.ev("localStorage.getItem('wallet')"), '0xAbCdEf0123456789aBcDeF0123456789ABCDEF01');
+    // Volver a BTC: se oculta la dirección y el aviso
+    await p.ev("(()=>{const u=document.getElementById('unit');u.value='BTC';u.dispatchEvent(new Event('change'))})()");
+    assert.equal(await p.ev("document.getElementById('walletBox').hidden"), true);
+    assert.equal(await p.ev("document.getElementById('walletMsg').hidden"), true);
+    assert.match(await p.ev("document.getElementById('action').textContent"), /^Vende 0,000200 BTC/);
     assert.deepEqual(p.errors, []);
   } finally { await p.close(); }
 });

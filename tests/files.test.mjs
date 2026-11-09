@@ -66,6 +66,7 @@ test('Los metadatos para compartir apuntan a la imagen publicada', () => {
 test('La página no carga nada de Google ni de otros dominios salvo las APIs de datos', () => {
   assert.ok(!/fonts\.googleapis|fonts\.gstatic/.test(HTML), 'no debe usar Google Fonts');
   const ext = new Set([...HTML.matchAll(/https:\/\/([a-z0-9.-]+)/g)].map(m => m[1]));
-  const allowed = ['api.binance.com', 'www.bitstamp.net', 'api.alternative.me', 'satscope-seven.vercel.app', 'github.com'];
+  const allowed = ['api.binance.com', 'www.bitstamp.net', 'api.alternative.me', 'satscope-seven.vercel.app', 'github.com',
+    'polygon-bor-rpc.publicnode.com', '1rpc.io', 'polygon.drpc.org'];
   for (const h of ext) assert.ok(allowed.includes(h), `dominio inesperado en la página: ${h}`);
 });

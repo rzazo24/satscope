@@ -28,7 +28,7 @@ export function load({ now = Date.UTC(2026, 10, 9, 12), fetch = async () => { th
   }
   const store = { ...storage };
   const ctx = vm.createContext({
-    Math, Map, Set, Number, String, JSON, Error, Promise, isFinite, AbortSignal, console,
+    Math, Map, Set, Number, String, JSON, Error, Promise, isFinite, AbortSignal, BigInt, console,
     Date: FakeDate,
     fetch: (...a) => ctx.__fetch(...a),
     __fetch: fetch,

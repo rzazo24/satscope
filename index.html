@@ -130,7 +130,8 @@ dialog.help::backdrop{background:rgba(0,0,0,.45)}
 .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:12px}
 .add{margin-top:12px}
 .add .grid2{align-items:end}
-.stats[hidden],.ops[hidden],.note[hidden]{display:none}
+.stats[hidden],.ops[hidden],.note[hidden],label[hidden]{display:none}
+#wallet{font-family:var(--mono);font-size:.8rem}
 .bt-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:10px}
 .bt-head h2{margin:0}
 .bt-head label{display:flex;align-items:center;gap:6px;font-size:.8rem;color:var(--muted)}
@@ -238,6 +239,7 @@ try{const t=localStorage.getItem('theme');if(t==='light'||t==='dark')document.do
     <li><strong>Semanas saltadas</strong>: semanas ya cerradas en las que tocaba comprar o vender y no apuntaste nada.</li>
   </ul>
   <p>Tipos de operación: <strong>Compra</strong> (importe pagado, BTC recibido y parte pagada con la reserva), <strong>Venta</strong> (dólares recibidos y BTC vendido) y <strong>Ajuste de reserva</strong> (dinero que sumas a la reserva o, en negativo, que restas).</p>
+  <p><strong>Si compras WBTC en Polygon</strong>, elige «WBTC (Polygon)» en «Lo que compras» (en los ajustes): la app hablará de WBTC. Si además escribes tu dirección pública de Polygon, la app lee tu saldo de WBTC, lo compara con el registro y te avisa si falta apuntar algo. Las ventas se calculan entonces con el saldo real de la wallet. Solo se lee: nunca se piden claves ni se firma nada.</p>
   <p class="warn">El registro se guarda <strong>solo en este navegador</strong>. Usa «Exportar CSV» de vez en cuando como copia, e «Importar CSV» para recuperarlo en otro dispositivo. Al importar no se duplican las operaciones repetidas.</p>
 
   <h3 id="h-backtest">Backtest</h3>
@@ -253,6 +255,7 @@ try{const t=localStorage.getItem('theme');if(t==='light'||t==='dark')document.do
     <li><strong>Precios</strong>: velas diarias de Binance (BTC/USDT). Si Binance falla, de Bitstamp (BTC/USD).</li>
     <li><strong>Fear &amp; Greed</strong>: alternative.me. Si falla, se usan los valores guardados.</li>
     <li><strong>Euros</strong>: el cambio EUR/USD de Binance o de Bitstamp.</li>
+    <li><strong>Saldo de WBTC</strong> (opcional): nodos públicos de Polygon (publicnode, 1rpc o drpc).</li>
   </ul>
   <p>Si no hay ninguna fuente disponible, la app usa una copia semanal guardada en la propia página. La línea bajo «SatScope» dice siempre qué datos se están usando.</p>
   <p><strong>Semanas cerradas</strong>: la señal usa el cierre del domingo, que termina a las 00:00 UTC del lunes (la 1:00 o las 2:00 en España). Por eso es la misma toda la semana.</p>
@@ -266,7 +269,7 @@ try{const t=localStorage.getItem('theme');if(t==='light'||t==='dark')document.do
   </ul>
 
   <h3 id="h-privacidad">Privacidad</h3>
-  <p>No hay cuentas. Tus ajustes, el idioma, el tema y el registro se guardan solo en tu navegador. Los precios los pide tu navegador directamente a Binance, Bitstamp y alternative.me. La web cuenta las visitas con Vercel Web Analytics, sin cookies ni datos personales.</p>
+  <p>No hay cuentas. Tus ajustes, el idioma, el tema y el registro se guardan solo en tu navegador. Los precios los pide tu navegador directamente a Binance, Bitstamp y alternative.me. Si escribes tu dirección de Polygon, tu navegador la envía a un nodo público de Polygon para leer el saldo, como hace cualquier wallet; ese nodo puede ver tu IP junto a la dirección. La web cuenta las visitas con Vercel Web Analytics, sin cookies ni datos personales.</p>
 
   <h3 id="h-faq">Preguntas frecuentes</h3>
   <dl>
@@ -361,6 +364,7 @@ try{const t=localStorage.getItem('theme');if(t==='light'||t==='dark')document.do
     <li><strong>Weeks skipped</strong>: closed weeks when you were due to buy or sell and didn't log anything.</li>
   </ul>
   <p>Trade types: <strong>Buy</strong> (amount paid, BTC received and the part paid from the reserve), <strong>Sell</strong> (dollars received and BTC sold) and <strong>Reserve adjustment</strong> (money you add to the reserve or, as a negative, take from it).</p>
+  <p><strong>If you buy WBTC on Polygon</strong>, choose "WBTC (Polygon)" under "What you buy" (in the settings) and the app will talk about WBTC. If you also enter your public Polygon address, the app reads your WBTC balance, compares it with the log and tells you if something is missing. Sales are then worked out from your real wallet balance. It's read-only: no keys are ever asked for and nothing is signed.</p>
   <p class="warn">The log is saved <strong>only in this browser</strong>. Use "Export CSV" now and then as a backup, and "Import CSV" to restore it on another device. Importing never duplicates trades you already have.</p>
 
   <h3 id="h-backtest">Backtest</h3>
@@ -376,6 +380,7 @@ try{const t=localStorage.getItem('theme');if(t==='light'||t==='dark')document.do
     <li><strong>Prices</strong>: daily candles from Binance (BTC/USDT). If Binance fails, from Bitstamp (BTC/USD).</li>
     <li><strong>Fear &amp; Greed</strong>: alternative.me. If it fails, saved values are used.</li>
     <li><strong>Euros</strong>: the EUR/USD rate from Binance or Bitstamp.</li>
+    <li><strong>WBTC balance</strong> (optional): public Polygon nodes (publicnode, 1rpc or drpc).</li>
   </ul>
   <p>If no source is available, the app uses a weekly copy saved in the page itself. The line under "SatScope" always says which data is in use.</p>
   <p><strong>Closed weeks</strong>: the signal uses Sunday's close, which ends at 00:00 UTC on Monday. That's why it stays the same all week.</p>
@@ -389,7 +394,7 @@ try{const t=localStorage.getItem('theme');if(t==='light'||t==='dark')document.do
   </ul>
 
   <h3 id="h-privacidad">Privacy</h3>
-  <p>There are no accounts. Your settings, language, theme and trade log are saved only in your browser. Your browser fetches prices directly from Binance, Bitstamp and alternative.me. The site counts visits with Vercel Web Analytics, with no cookies and no personal data.</p>
+  <p>There are no accounts. Your settings, language, theme and trade log are saved only in your browser. Your browser fetches prices directly from Binance, Bitstamp and alternative.me. If you enter your Polygon address, your browser sends it to a public Polygon node to read the balance, just like any wallet does; that node can see your IP alongside the address. The site counts visits with Vercel Web Analytics, with no cookies and no personal data.</p>
 
   <h3 id="h-faq">FAQ</h3>
   <dl>
@@ -468,6 +473,7 @@ try{const t=localStorage.getItem('theme');if(t==='light'||t==='dark')document.do
   <section>
     <h2><span data-i18n="pf"></span><button type="button" class="qh" data-help="cartera" data-i18n-aria="helpOn">?</button></h2>
     <div class="stats" id="pfStats"></div>
+    <p class="note" id="walletMsg" role="status" hidden></p>
     <p class="note" id="pfEmpty" data-i18n="pfEmpty"></p>
     <div class="ops" id="pfOps"></div>
     <p class="note" id="pfStar" data-i18n="star" hidden></p>
@@ -520,6 +526,11 @@ try{const t=localStorage.getItem('theme');if(t==='light'||t==='dark')document.do
         <label><span data-i18n="lReuse"></span><input type="number" id="reuseBelow" value="20"></label>
       </div>
       <label style="display:flex;align-items:center;gap:8px;margin-top:12px;font-size:.85rem"><input type="checkbox" id="showEur" style="width:auto"> <span data-i18n="lEur"></span></label>
+      <div class="grid2">
+        <label><span data-i18n="lUnit"></span><select id="unit"><option value="BTC">BTC</option><option value="WBTC">WBTC (Polygon)</option></select></label>
+        <label id="walletBox" hidden><span data-i18n="lWallet"></span><input type="text" id="wallet" placeholder="0x…" autocomplete="off" autocapitalize="off" spellcheck="false" inputmode="latin"></label>
+      </div>
+      <p class="note" id="walletNote" data-i18n="walletNote" hidden></p>
       <p class="note" style="margin-top:10px" data-i18n="saved"></p>
       <div class="row" style="margin-top:8px">
         <button type="button" class="btn" id="resetBtn" data-i18n="reset"></button>
@@ -549,13 +560,17 @@ const clamp=v=>Math.max(0,Math.min(100,v));
 // Idioma
 const I18N={
   es:{loc:'es-ES',desc:'Panel de DCA dinámico para Bitcoin',loading:'Cargando…',live:(s,f)=>`Datos en directo · ${s}${f==='live'?' + alternative.me':f==='snap'?' · Fear & Greed no disponible: se usan los valores guardados':' · Fear & Greed no disponible: la puntuación se calcula sin él'}`,snap:d=>`Sin conexión a las APIs · datos guardados del ${d}`,
-    theme:'Tema',reset:'Restablecer valores por defecto',resetDone:'Ajustes restablecidos.',help:'Ayuda',helpT:'Ayuda de SatScope',close:'Cerrar',helpOn:'Ayuda sobre esta sección',welcome:'¿Primera vez aquí? Te explico en un minuto cómo funciona y qué hacer cada semana.',welcomeGo:'Ver la ayuda',install:'Instalar app',updMsg:'Hay una nueva versión de SatScope.',updGo:'Actualizar',updLater:'Más tarde',tAuto:'Auto',tLight:'Claro',tDark:'Oscuro',calc:'Calculando la acción de esta semana…',tick0:'0 miedo',tick100:'100 euforia',
+    theme:'Tema',lUnit:'Lo que compras',lWallet:'Tu dirección de Polygon (opcional)',
+    walletNote:'Solo se usa para leer tu saldo de WBTC en un nodo público de Polygon: nunca se piden claves ni se firma nada. Se guarda solo en este navegador.',
+    walletBad:'La dirección debe empezar por 0x y tener 42 caracteres.',wLoading:'Leyendo tu saldo de WBTC en Polygon…',wErr:'No se ha podido leer tu saldo en Polygon. Se usa el registro.',
+    wOk:w=>`En tu wallet: ${w} WBTC. Coincide con el registro.`,
+    wDiff:(w,l,d)=>`En tu wallet: ${w} WBTC; en el registro: ${l} (diferencia: ${d}). ¿Falta apuntar alguna operación? Las ventas se calculan con el saldo de la wallet.`,reset:'Restablecer valores por defecto',resetDone:'Ajustes restablecidos.',help:'Ayuda',helpT:'Ayuda de SatScope',close:'Cerrar',helpOn:'Ayuda sobre esta sección',welcome:'¿Primera vez aquí? Te explico en un minuto cómo funciona y qué hacer cada semana.',welcomeGo:'Ver la ayuda',install:'Instalar app',updMsg:'Hay una nueva versión de SatScope.',updGo:'Actualizar',updLater:'Más tarde',tAuto:'Auto',tLight:'Claro',tDark:'Oscuro',calc:'Calculando la acción de esta semana…',tick0:'0 miedo',tick100:'100 euforia',
     inds:'Indicadores',hist:'Puntuación de las últimas 104 semanas',histNote:'Línea discontinua: umbral de venta. Zona verde: tramos con compra.',
     settings:'Ajustes de la estrategia',lBase:'Aportación base ($)',lWF:'Peso Fear & Greed',lWD:'Peso caída desde máximo',lWW:'Peso MA200 semanas',lWR:'Peso RSI semanal',
-    lSellAt:'Vender desde puntuación',lSellPct:'% de BTC a vender',saved:'Los ajustes se guardan en este navegador.',
+    lSellAt:'Vender desde puntuación',lSellPct:'% de {U} a vender',saved:'Los ajustes se guardan en este navegador.',
     disclaimer:'Herramienta de análisis basada en datos históricos. No es asesoramiento financiero.',
     sell:'Vender',buy:'Comprar',hold:'Esperar',
-    aSell:p=>`Vende el ${p} % de tu BTC esta semana`,aBuy:(a,m)=>`Compra ${a} $ esta semana (×${m})`,aHold:'Esta semana no toca comprar ni vender',
+    aSell:p=>`Vende el ${p} % de tu {U} esta semana`,aBuy:(a,m)=>`Compra ${a} $ esta semana (×${m})`,aHold:'Esta semana no toca comprar ni vender',
     price:p=>`BTC ahora a ${p} $`,wk:(d,n)=>`Señal con el cierre semanal del ${d} · la siguiente, tras el cierre del ${n}`,wkSnap:d=>`Señal con los datos guardados del ${d}`,
     bt:'Backtest',btFrom:'Desde',btDyn:'Tu estrategia',btDca:'DCA fijo',rInv:'Invertido',rBtc:'BTC acumulado',rSold:'Reserva en efectivo',rVal:'Valor hoy',rRet:'Rentabilidad',rAvg:'Precio medio de compra',
     btNote:'Simulación semanal con los ajustes de abajo. Lo vendido se guarda como reserva y se usa para comprar el doble cuando la puntuación baja del umbral de reserva. DCA fijo: la aportación base todas las semanas. Sin comisiones. Valor hoy = BTC × último cierre semanal + reserva sin usar.',
@@ -563,16 +578,16 @@ const I18N={
     eurP:e=>`(≈ ${e} €)`,eurA:(e,r)=>`Equivale a ≈ ${e} € (1 € = ${r} $)`,ics:'Recordatorio semanal',
     chartAria:(mn,mx,last,sell)=>`Gráfico de la puntuación de las últimas 104 semanas: mínima ${mn}, máxima ${mx}, actual ${last}. Umbral de venta: ${sell}.`,
     btAria:(f,to,a,b)=>`Gráfico del valor de la cartera de ${f} a ${to}: tu estrategia termina en ${a} y el DCA fijo en ${b}.`,
-    aSellBtc:(b,u)=>`Vende ${b} BTC esta semana (≈ ${u})`,
+    aSellBtc:(b,u)=>`Vende ${b} {U} esta semana (≈ ${u})`,
     markDone:'Marcar como hecha',save:'Guardar',cancel:'Cancelar',undo:'Deshacer',
-    fUsdBuy:'Importe pagado ($)',fBtcBuy:'BTC recibido',fBtcSell:'BTC vendido',fUsdSell:'Recibido ($)',
-    doneBuy:(u,b)=>`Hecha: compraste ${b} BTC por ${u}`,doneSell:(u,b)=>`Hecha: vendiste ${b} BTC por ${u}`,
+    fUsdBuy:'Importe pagado ($)',fBtcBuy:'{U} recibido',fBtcSell:'{U} vendido',fUsdSell:'Recibido ($)',
+    doneBuy:(u,b)=>`Hecha: compraste ${b} {U} por ${u}`,doneSell:(u,b)=>`Hecha: vendiste ${b} {U} por ${u}`,
     pf:'Tu cartera',pfEmpty:'Aún no hay operaciones. Márcalas como hechas desde la acción de la semana o añádelas a mano.',
-    sBtc:'BTC',sVal:'Valor hoy',sInv:'Dinero aportado',sRet:'Rentabilidad',sAvg:'Precio medio',sRes:'Reserva de ventas',sSkip:'Semanas saltadas',
-    cDate:'Fecha',cType:'Tipo',cUsd:'$',cBtc:'BTC',tyBuy:'Compra',tySell:'Venta',tyRes:'Ajuste de reserva',del:'Borrar',delQ:'¿Borrar esta operación?',
-    addOp:'Añadir operación a mano',fType:'Tipo',fDate:'Fecha',fUsd:'Importe ($)',fBtc:'BTC',fRes:'De la reserva ($)',add:'Añadir',
+    sBtc:'{U}',sVal:'Valor hoy',sInv:'Dinero aportado',sRet:'Rentabilidad',sAvg:'Precio medio',sRes:'Reserva de ventas',sSkip:'Semanas saltadas',
+    cDate:'Fecha',cType:'Tipo',cUsd:'$',cBtc:'{U}',tyBuy:'Compra',tySell:'Venta',tyRes:'Ajuste de reserva',del:'Borrar',delQ:'¿Borrar esta operación?',
+    addOp:'Añadir operación a mano',fType:'Tipo',fDate:'Fecha',fUsd:'Importe ($)',fBtc:'{U}',fRes:'De la reserva ($)',add:'Añadir',
     addNote:'Compra: importe total pagado y BTC recibido; «De la reserva» es la parte que salió de la reserva de ventas. Venta: dólares recibidos y BTC vendido. Ajuste de reserva: dinero que sumas (o restas, en negativo) a la reserva.',
-    exp:'Exportar CSV',imp:'Importar CSV',impOk:n=>n===1?'Importada 1 operación nueva.':`Importadas ${n} operaciones nuevas.`,star:'* Pagada en parte con la reserva de ventas.',tooMuch:b=>`No puedes vender más BTC del que tienes registrado (${b}).`,impErr:'No se ha podido leer el archivo: debe ser un CSV exportado desde SatScope.',
+    exp:'Exportar CSV',imp:'Importar CSV',impOk:n=>n===1?'Importada 1 operación nueva.':`Importadas ${n} operaciones nuevas.`,star:'* Pagada en parte con la reserva de ventas.',tooMuch:b=>`No puedes vender más {U} del que tienes registrado (${b}).`,impErr:'No se ha podido leer el archivo: debe ser un CSV exportado desde SatScope.',
     pfNote:'El registro se guarda solo en este navegador. Exporta una copia de vez en cuando.',
     aBuyRes:(tot,a,r)=>`Compra ${tot} esta semana: ${a} de aportación + ${r} de tu reserva`,
     hResUsed:left=>`Miedo extremo: se usa tu reserva de ventas (después quedarán ${left}).`,
@@ -580,13 +595,17 @@ const I18N={
     hSell:'Lo que cobres pasa a tu reserva de ventas y se usará para comprar más en las semanas de miedo extremo.',
     iF:'Fear & Greed',iD:'Caída desde máximo',iW:'Precio / MA200 semanas',iR:'RSI semanal',weight:'peso',adds:'Aporta'},
   en:{loc:'en-US',desc:'Dynamic DCA dashboard for Bitcoin',loading:'Loading…',live:(s,f)=>`Live data · ${s}${f==='live'?' + alternative.me':f==='snap'?' · Fear & Greed unavailable: using saved values':' · Fear & Greed unavailable: the score is worked out without it'}`,snap:d=>`APIs unreachable · saved data from ${d}`,
-    theme:'Theme',reset:'Reset to defaults',resetDone:'Settings reset.',help:'Help',helpT:'SatScope help',close:'Close',helpOn:'Help on this section',welcome:'First time here? Here\'s a one-minute guide to how it works and what to do each week.',welcomeGo:'Read the help',install:'Install app',updMsg:'A new version of SatScope is available.',updGo:'Update',updLater:'Later',tAuto:'Auto',tLight:'Light',tDark:'Dark',calc:'Working out this week’s action…',tick0:'0 fear',tick100:'100 greed',
+    theme:'Theme',lUnit:'What you buy',lWallet:'Your Polygon address (optional)',
+    walletNote:'Only used to read your WBTC balance from a public Polygon node: no keys are ever asked for and nothing is signed. It\'s only saved in this browser.',
+    walletBad:'The address must start with 0x and be 42 characters long.',wLoading:'Reading your WBTC balance on Polygon…',wErr:'Couldn\'t read your balance on Polygon. Using the trade log.',
+    wOk:w=>`In your wallet: ${w} WBTC. It matches the trade log.`,
+    wDiff:(w,l,d)=>`In your wallet: ${w} WBTC; in the trade log: ${l} (difference: ${d}). Is a trade missing? Sales are worked out from the wallet balance.`,reset:'Reset to defaults',resetDone:'Settings reset.',help:'Help',helpT:'SatScope help',close:'Close',helpOn:'Help on this section',welcome:'First time here? Here\'s a one-minute guide to how it works and what to do each week.',welcomeGo:'Read the help',install:'Install app',updMsg:'A new version of SatScope is available.',updGo:'Update',updLater:'Later',tAuto:'Auto',tLight:'Light',tDark:'Dark',calc:'Working out this week’s action…',tick0:'0 fear',tick100:'100 greed',
     inds:'Indicators',hist:'Score over the last 104 weeks',histNote:'Dashed line: sell threshold. Green zone: bands that buy.',
     settings:'Strategy settings',lBase:'Base amount ($)',lWF:'Fear & Greed weight',lWD:'Drawdown from ATH weight',lWW:'200-week MA weight',lWR:'Weekly RSI weight',
-    lSellAt:'Sell from score',lSellPct:'% of BTC to sell',saved:'Settings are saved in this browser.',
+    lSellAt:'Sell from score',lSellPct:'% of {U} to sell',saved:'Settings are saved in this browser.',
     disclaimer:'Analysis tool based on historical data. Not financial advice.',
     sell:'Sell',buy:'Buy',hold:'Hold',
-    aSell:p=>`Sell ${p}% of your BTC this week`,aBuy:(a,m)=>`Buy $${a} this week (×${m})`,aHold:'No buying or selling this week',
+    aSell:p=>`Sell ${p}% of your {U} this week`,aBuy:(a,m)=>`Buy $${a} this week (×${m})`,aHold:'No buying or selling this week',
     price:p=>`BTC now at $${p}`,wk:(d,n)=>`Signal from the weekly close of ${d} · next one after the close of ${n}`,wkSnap:d=>`Signal from saved data of ${d}`,
     bt:'Backtest',btFrom:'From',btDyn:'Your strategy',btDca:'Fixed DCA',rInv:'Invested',rBtc:'BTC accumulated',rSold:'Cash reserve',rVal:'Value today',rRet:'Return',rAvg:'Average buy price',
     btNote:'Weekly simulation with the settings below. Sale proceeds are kept as a reserve and used to buy double when the score drops below the reserve threshold. Fixed DCA: the base amount every week. No fees. Value today = BTC × last weekly close + unused reserve.',
@@ -594,16 +613,16 @@ const I18N={
     eurP:e=>`(≈ €${e})`,eurA:(e,r)=>`That's about €${e} (€1 = $${r})`,ics:'Weekly reminder',
     chartAria:(mn,mx,last,sell)=>`Chart of the score over the last 104 weeks: low ${mn}, high ${mx}, current ${last}. Sell threshold: ${sell}.`,
     btAria:(f,to,a,b)=>`Chart of portfolio value from ${f} to ${to}: your strategy ends at ${a} and fixed DCA at ${b}.`,
-    aSellBtc:(b,u)=>`Sell ${b} BTC this week (≈ ${u})`,
+    aSellBtc:(b,u)=>`Sell ${b} {U} this week (≈ ${u})`,
     markDone:'Mark as done',save:'Save',cancel:'Cancel',undo:'Undo',
-    fUsdBuy:'Amount paid ($)',fBtcBuy:'BTC received',fBtcSell:'BTC sold',fUsdSell:'Received ($)',
-    doneBuy:(u,b)=>`Done: you bought ${b} BTC for ${u}`,doneSell:(u,b)=>`Done: you sold ${b} BTC for ${u}`,
+    fUsdBuy:'Amount paid ($)',fBtcBuy:'{U} received',fBtcSell:'{U} sold',fUsdSell:'Received ($)',
+    doneBuy:(u,b)=>`Done: you bought ${b} {U} for ${u}`,doneSell:(u,b)=>`Done: you sold ${b} {U} for ${u}`,
     pf:'Your portfolio',pfEmpty:'No trades yet. Mark them as done from this week\'s action or add them by hand.',
-    sBtc:'BTC',sVal:'Value today',sInv:'Money put in',sRet:'Return',sAvg:'Average price',sRes:'Sales reserve',sSkip:'Weeks skipped',
-    cDate:'Date',cType:'Type',cUsd:'$',cBtc:'BTC',tyBuy:'Buy',tySell:'Sell',tyRes:'Reserve adjustment',del:'Delete',delQ:'Delete this trade?',
-    addOp:'Add a trade by hand',fType:'Type',fDate:'Date',fUsd:'Amount ($)',fBtc:'BTC',fRes:'From reserve ($)',add:'Add',
+    sBtc:'{U}',sVal:'Value today',sInv:'Money put in',sRet:'Return',sAvg:'Average price',sRes:'Sales reserve',sSkip:'Weeks skipped',
+    cDate:'Date',cType:'Type',cUsd:'$',cBtc:'{U}',tyBuy:'Buy',tySell:'Sell',tyRes:'Reserve adjustment',del:'Delete',delQ:'Delete this trade?',
+    addOp:'Add a trade by hand',fType:'Type',fDate:'Date',fUsd:'Amount ($)',fBtc:'{U}',fRes:'From reserve ($)',add:'Add',
     addNote:'Buy: total amount paid and BTC received; "From reserve" is the part that came from the sales reserve. Sell: dollars received and BTC sold. Reserve adjustment: money you add to (or take from, as a negative) the reserve.',
-    exp:'Export CSV',imp:'Import CSV',impOk:n=>n===1?'Imported 1 new trade.':`Imported ${n} new trades.`,star:'* Partly paid with the sales reserve.',tooMuch:b=>`You can't sell more BTC than you have logged (${b}).`,impErr:'Couldn\'t read the file: it must be a CSV exported from SatScope.',
+    exp:'Export CSV',imp:'Import CSV',impOk:n=>n===1?'Imported 1 new trade.':`Imported ${n} new trades.`,star:'* Partly paid with the sales reserve.',tooMuch:b=>`You can't sell more {U} than you have logged (${b}).`,impErr:'Couldn\'t read the file: it must be a CSV exported from SatScope.',
     pfNote:'The log is only saved in this browser. Export a copy now and then.',
     aBuyRes:(tot,a,r)=>`Buy ${tot} this week: ${a} contribution + ${r} from your reserve`,
     hResUsed:left=>`Extreme fear: your sales reserve is used (${left} left afterwards).`,
@@ -613,10 +632,12 @@ const I18N={
 };
 let LANG='es';
 try{const l=localStorage.getItem('lang');LANG=l==='en'||l==='es'?l:(navigator.language||'es').toLowerCase().startsWith('es')?'es':'en'}catch(e){LANG=(navigator.language||'es').toLowerCase().startsWith('es')?'es':'en'}
-const T=()=>I18N[LANG];
+let UNIT='BTC';try{if(localStorage.getItem('unit')==='WBTC')UNIT='WBTC'}catch(e){}
+const tu=v=>typeof v==='string'?v.replace(/\{U\}/g,UNIT):v;
+const T=()=>new Proxy(I18N[LANG],{get:(o,k)=>{const v=o[k];return typeof v==='function'?(...a)=>tu(v(...a)):tu(v)}});
 const fmt=(v,d=0)=>v.toLocaleString(T().loc,{maximumFractionDigits:d,minimumFractionDigits:d});
 const usd=(v,d=0)=>LANG==='es'?`${fmt(v,d)} $`:(v<0?'−$'+fmt(-v,d):'$'+fmt(v,d));
-const pct=v=>(v>0?'+':'')+fmt(v)+(LANG==='es'?' %':'%');
+const pct=v=>{const r=Math.round(v)||0;return (r>0?'+':'')+fmt(r)+(LANG==='es'?' %':'%')}; // sin «-0 %»
 const fdate=(iso,add=0)=>new Date(Date.parse(iso)+add*864e5).toLocaleDateString(T().loc,{day:'numeric',month:'short',year:'numeric',timeZone:'UTC'});
 let SRC='loading',LIVE={src:'',fng:'live'};
 function applyLang(){
@@ -756,6 +777,18 @@ function backtest(rows,c){
 let ROWS=null,HIST=null,NOW=null,EURX=null; // EURX: dólares por euro
 const showEur=()=>$('showEur').checked;
 try{$('showEur').checked=localStorage.getItem('eur')!=='0'}catch(e){$('showEur').checked=true}
+$('unit').value=UNIT;
+function showWalletBox(){const on=UNIT==='WBTC';$('walletBox').hidden=!on;$('walletNote').hidden=!on}
+showWalletBox();
+$('unit').addEventListener('change',()=>{
+  UNIT=$('unit').value==='WBTC'?'WBTC':'BTC';try{localStorage.setItem('unit',UNIT)}catch(e){}
+  showWalletBox();applyLang();loadWallet();
+});
+let walletTimer=null;
+$('wallet').addEventListener('input',()=>{
+  WALLET.addr=$('wallet').value.trim();try{WALLET.addr?localStorage.setItem('wallet',WALLET.addr):localStorage.removeItem('wallet')}catch(e){}
+  clearTimeout(walletTimer);walletTimer=setTimeout(loadWallet,500);
+});
 $('showEur').addEventListener('change',()=>{try{localStorage.setItem('eur',showEur()?'1':'0')}catch(e){}render()});
 // Cambio euro-dólar (solo para mostrar equivalencias; la estrategia y el registro van en dólares)
 async function fx(){
@@ -805,6 +838,27 @@ function skipped(c){
   }
   return n;
 }
+// Saldo de WBTC en Polygon: lectura pública con eth_call a balanceOf del contrato de WBTC (8 decimales).
+// Solo lee: no hay claves ni firmas. Se prueban varios nodos públicos por si alguno falla.
+const WBTC_POLYGON='0x1BFD67037B42Cf73acF2047067bd4F2C47D9BfD6';
+const POLYGON_RPC=['https://polygon-bor-rpc.publicnode.com','https://1rpc.io/matic','https://polygon.drpc.org'];
+const isAddr=a=>/^0x[0-9a-fA-F]{40}$/.test(a);
+const balanceOfData=a=>'0x70a08231'+a.slice(2).toLowerCase().padStart(64,'0');
+const fromUnits=(hex,dec=8)=>Number(BigInt(hex==='0x'?'0x0':hex))/10**dec;
+async function wbtcBalance(addr){
+  if(!isAddr(addr))throw new Error('dirección no válida');
+  const body=JSON.stringify({jsonrpc:'2.0',id:1,method:'eth_call',params:[{to:WBTC_POLYGON,data:balanceOfData(addr)},'latest']});
+  for(const url of POLYGON_RPC){
+    try{
+      const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body,signal:AbortSignal.timeout(10000)});
+      if(!r.ok)continue;
+      const j=await r.json();
+      if(typeof j.result==='string'&&/^0x[0-9a-fA-F]*$/.test(j.result))return fromUnits(j.result);
+    }catch(e){}
+  }
+  throw new Error('ningún nodo de Polygon ha respondido');
+}
+
 // Migración de ajustes: la versión anterior guardaba todos los valores; se conserva solo lo que
 // difería de sus valores por defecto, para que los valores por defecto nuevos lleguen a todos
 // (la función se declara aquí pero se usa al arrancar, así que no puede depender de constantes de más abajo)
@@ -832,6 +886,20 @@ function mergeOps(list,incoming){
   return {list:out,added};
 }
 let CUR=null,FORM=false;
+let WALLET={addr:'',bal:null,status:'idle'},walletSeq=0; // status: idle | bad | loading | ok | err
+try{WALLET.addr=localStorage.getItem('wallet')||''}catch(e){}
+$('wallet').value=WALLET.addr;
+async function loadWallet(){
+  const seq=++walletSeq,a=WALLET.addr.trim();
+  if(UNIT!=='WBTC'||!a){WALLET.status='idle';WALLET.bal=null;return render()}
+  if(!isAddr(a)){WALLET.status='bad';WALLET.bal=null;return render()}
+  WALLET.status='loading';render();
+  try{const b=await wbtcBalance(a);if(seq!==walletSeq)return;WALLET.bal=b;WALLET.status='ok'}
+  catch(e){if(seq!==walletSeq)return;WALLET.bal=null;WALLET.status='err'}
+  render();
+}
+// BTC que tienes: el saldo real de la wallet si se ha podido leer; si no, el del registro
+const held=LS=>WALLET.status==='ok'?WALLET.bal:LS.btc;
 
 // Ayuda: el contenido está en <template id="help-es"> y <template id="help-en">; los valores
 // marcados con data-v se rellenan con los ajustes actuales (n: número, usd: importe,
@@ -882,7 +950,7 @@ function render(){
   let hint='';const LS=ledgerStats();CUR={kind:'hold',t:r.t};
   if(sell){
     pill.textContent=t.sell;pill.style.background='var(--sell)';
-    const q=LS.btc*c.sellPct/100;
+    const q=held(LS)*c.sellPct/100;
     $('action').textContent=q>0?t.aSellBtc(fmt(q,6),usd(q*NOW,2)):t.aSell(fmt(c.sellPct));hint=t.hSell;
     CUR={kind:'sell',t:r.t,btc:q,usd:q*NOW,res:0};
   }
@@ -930,7 +998,19 @@ $('done').addEventListener('submit',e=>{
   LEDGER.push({id:newId(),d:today(),type:CUR.kind,usd:u,btc:b,res:CUR.kind==='buy'?Math.min(CUR.res,u):0});
   FORM=false;saveLedger();
 });
+function renderWallet(LS){
+  const t=T(),m=$('walletMsg'),st=WALLET.status;
+  m.hidden=st==='idle';
+  if(st==='bad')m.textContent=t.walletBad;
+  else if(st==='loading')m.textContent=t.wLoading;
+  else if(st==='err')m.textContent=t.wErr;
+  else if(st==='ok'){
+    const d=WALLET.bal-LS.btc;
+    m.textContent=Math.abs(d)<5e-9?t.wOk(fmt(WALLET.bal,8)):t.wDiff(fmt(WALLET.bal,8),fmt(LS.btc,8),(d>0?'+':'−')+fmt(Math.abs(d),8));
+  }
+}
 function renderPf(c,LS){
+  renderWallet(LS);
   const t=T(),has=LEDGER.length>0;
   $('pfEmpty').hidden=has;$('pfStar').hidden=!LEDGER.some(o=>o.res>0);$('pfOps').hidden=!has;$('pfStats').hidden=!has;$('expBtn').disabled=!has;
   if(!has)return;
@@ -1030,6 +1110,7 @@ applyTheme(savedTheme);applyLang();
     HIST=[...SNAP.filter(r=>r.t<ROWS[0].t),...ROWS]}
   catch(e){ROWS=SNAP;HIST=SNAP;NOW=SNAP.at(-1).p;SRC='snap'}
   applyLang();
+  loadWallet();
 })();
 </script>
 </body>
