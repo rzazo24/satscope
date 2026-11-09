@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" fill="#d9820b"/>
+  <circle cx="256" cy="256" r="150" fill="none" stroke="#fff" stroke-width="22" opacity=".35"/>
+  <path d="M256 106 A150 150 0 0 1 400 300" fill="none" stroke="#fff" stroke-width="22" stroke-linecap="round"/>
+  <text x="256" y="256" dy=".35em" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-weight="700" font-size="190" fill="#fff">₿</text>
+</svg>

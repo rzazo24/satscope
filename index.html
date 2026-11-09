@@ -5,7 +5,16 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>SatScope</title>
 <meta name="description" content="Panel de DCA dinámico para Bitcoin">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%E2%82%BF%3C/text%3E%3C/svg%3E">
+<link rel="icon" href="/icons/icon.svg" type="image/svg+xml">
+<link rel="icon" href="/icons/icon-192.png" type="image/png" sizes="192x192">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#f6f5f1" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15140f" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="SatScope">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600&family=IBM+Plex+Mono:wght@400;600&display=swap">
 <style>
 /* Layout: panel de una columna — acción de la semana arriba, indicadores, histórico de puntuación, ajustes plegados */
@@ -50,6 +59,7 @@ input:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outlin
 .seg button{font:inherit;font-size:.75rem;border:0;background:none;color:var(--muted);padding:4px 10px;border-radius:999px;cursor:pointer;min-height:28px}
 .seg button[aria-pressed="true"]{background:var(--fg);color:var(--bg);font-weight:600}
 .seg button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.seg[hidden]{display:none}
 @media (max-width:420px){.hero{grid-template-columns:1fr}.score{font-size:3.2rem}}
 </style>
 <!-- Vercel Web Analytics (sin cookies) -->
@@ -65,6 +75,7 @@ try{const t=localStorage.getItem('theme');if(t==='light'||t==='dark')document.do
   <div class="top">
     <div><h1>SatScope</h1><span class="src" id="src">…</span></div>
     <div class="ctrls">
+      <div class="seg" id="installSeg" hidden><button type="button" id="installBtn" data-i18n="install"></button></div>
       <div class="seg" role="group" id="langSeg" aria-label="Idioma / Language">
         <button type="button" data-lang="es" lang="es">ES</button><button type="button" data-lang="en" lang="en">EN</button>
       </div>
@@ -131,7 +142,7 @@ const clamp=v=>Math.max(0,Math.min(100,v));
 // Idioma
 const I18N={
   es:{loc:'es-ES',desc:'Panel de DCA dinámico para Bitcoin',loading:'Cargando…',live:'Datos en directo · Binance + alternative.me',snap:d=>`Sin conexión a las APIs · datos guardados del ${d}`,
-    theme:'Tema',tAuto:'Auto',tLight:'Claro',tDark:'Oscuro',calc:'Calculando la acción de esta semana…',tick0:'0 miedo',tick100:'100 euforia',
+    theme:'Tema',install:'Instalar app',tAuto:'Auto',tLight:'Claro',tDark:'Oscuro',calc:'Calculando la acción de esta semana…',tick0:'0 miedo',tick100:'100 euforia',
     inds:'Indicadores',hist:'Puntuación de las últimas 104 semanas',histNote:'Línea discontinua: umbral de venta. Zona verde: tramos con compra.',
     settings:'Ajustes de la estrategia',lBase:'Aportación base ($)',lWF:'Peso Fear & Greed',lWD:'Peso caída desde máximo',lWW:'Peso MA200 semanas',lWR:'Peso RSI semanal',
     lSellAt:'Vender desde puntuación',lSellPct:'% de BTC a vender',saved:'Los ajustes se guardan en este navegador.',
@@ -141,7 +152,7 @@ const I18N={
     price:(p,d)=>`BTC a ${p} $ · datos del ${d}`,
     iF:'Fear & Greed',iD:'Caída desde máximo',iW:'Precio / MA200 semanas',iR:'RSI semanal',weight:'peso',adds:'Aporta'},
   en:{loc:'en-US',desc:'Dynamic DCA dashboard for Bitcoin',loading:'Loading…',live:'Live data · Binance + alternative.me',snap:d=>`APIs unreachable · saved data from ${d}`,
-    theme:'Theme',tAuto:'Auto',tLight:'Light',tDark:'Dark',calc:'Working out this week’s action…',tick0:'0 fear',tick100:'100 greed',
+    theme:'Theme',install:'Install app',tAuto:'Auto',tLight:'Light',tDark:'Dark',calc:'Working out this week’s action…',tick0:'0 fear',tick100:'100 greed',
     inds:'Indicators',hist:'Score over the last 104 weeks',histNote:'Dashed line: sell threshold. Green zone: bands that buy.',
     settings:'Strategy settings',lBase:'Base amount ($)',lWF:'Fear & Greed weight',lWD:'Drawdown from ATH weight',lWW:'200-week MA weight',lWR:'Weekly RSI weight',
     lSellAt:'Sell from score',lSellPct:'% of BTC to sell',saved:'Settings are saved in this browser.',
@@ -175,6 +186,13 @@ function applyTheme(th){
 }
 $('themeSeg').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const th=b.dataset.themeOpt;try{th==='auto'?localStorage.removeItem('theme'):localStorage.setItem('theme',th)}catch(_){}applyTheme(th)});
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>render());
+
+// PWA: service worker y botón de instalar
+if('serviceWorker' in navigator&&location.protocol==='https:')addEventListener('load',()=>navigator.serviceWorker.register('/sw.js').catch(()=>{}));
+let installEvt=null;
+addEventListener('beforeinstallprompt',e=>{e.preventDefault();installEvt=e;$('installSeg').hidden=false});
+$('installBtn').addEventListener('click',async()=>{if(!installEvt)return;installEvt.prompt();await installEvt.userChoice.catch(()=>{});installEvt=null;$('installSeg').hidden=true});
+addEventListener('appinstalled',()=>{installEvt=null;$('installSeg').hidden=true});
 
 // Instantánea semanal integrada (Bitstamp + alternative.me), por si no hay conexión a las APIs
 const SNAP_START='2018-02-05',SNAP_END='2026-11-09';
