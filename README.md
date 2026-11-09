@@ -31,7 +31,7 @@ Sobre una aportación base de **10 $**, según el tramo de 20 puntos:
 |---|---|---|---|---|---|
 | Multiplicador | ×5 | ×1 | 0 | 0 | 0 |
 
-Con una puntuación de **75 o más** se vende un **5 %** del BTC acumulado.
+Con una puntuación de **80 o más** se vende un **2 %** del BTC acumulado. Lo cobrado se guarda como **reserva**: cuando la puntuación baja de **20** (miedo extremo), la compra de esa semana se duplica con dinero de la reserva. Puedes indicar tu reserva en los ajustes y la app te dice cuánto usar.
 
 Pesos, multiplicadores, aportación y umbral de venta se pueden cambiar en «Ajustes de la estrategia». Se guardan en el navegador.
 

@@ -33,6 +33,7 @@ section{background:var(--panel);border:1px solid var(--line);border-radius:8px;p
 .top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
 .src{font-size:.75rem;color:var(--muted);font-family:var(--mono)}
 .hero{display:grid;grid-template-columns:auto 1fr;gap:20px;align-items:center}
+.hero>div{min-width:0}
 .score{font-family:var(--mono);font-size:4rem;font-weight:600;line-height:1;font-variant-numeric:tabular-nums}
 .score small{font-size:1rem;color:var(--muted);font-weight:400}
 .pill{display:inline-block;padding:3px 10px;border-radius:999px;font-weight:600;font-size:.85rem;color:#fff}
@@ -115,6 +116,7 @@ try{const t=localStorage.getItem('theme');if(t==='light'||t==='dark')document.do
       <div>
         <span class="pill" id="pill">–</span>
         <div class="action" id="action" data-i18n="calc"></div>
+        <div class="sub" id="hint"></div>
         <div class="sub" id="price"></div>
       </div>
     </div>
@@ -155,8 +157,10 @@ try{const t=localStorage.getItem('theme');if(t==='light'||t==='dark')document.do
         <label>Mult. 40–60<input type="number" id="m2" value="0" step="0.25"></label>
         <label>Mult. 60–80<input type="number" id="m3" value="0" step="0.25"></label>
         <label>Mult. 80–100<input type="number" id="m4" value="0" step="0.25"></label>
-        <label><span data-i18n="lSellAt"></span><input type="number" id="sellAt" value="75"></label>
-        <label><span data-i18n="lSellPct"></span><input type="number" id="sellPct" value="5"></label>
+        <label><span data-i18n="lSellAt"></span><input type="number" id="sellAt" value="80"></label>
+        <label><span data-i18n="lSellPct"></span><input type="number" id="sellPct" value="2" step="0.5"></label>
+        <label><span data-i18n="lReuse"></span><input type="number" id="reuseBelow" value="20"></label>
+        <label><span data-i18n="lReserve"></span><input type="number" id="reserve" value="0" min="0" step="1"></label>
       </div>
       <p class="note" style="margin-top:10px" data-i18n="saved"></p>
     </details>
@@ -166,7 +170,7 @@ try{const t=localStorage.getItem('theme');if(t==='light'||t==='dark')document.do
 
 <script>
 const $=id=>document.getElementById(id);
-const IDS=['base','wF','wD','wW','wR','m0','m1','m2','m3','m4','sellAt','sellPct'];
+const IDS=['base','wF','wD','wW','wR','m0','m1','m2','m3','m4','sellAt','sellPct','reuseBelow','reserve'];
 // Ajustes: solo se guarda lo que el usuario cambia, así los valores por defecto nuevos llegan a todos
 const DEF=Object.fromEntries(IDS.map(k=>[k,+$(k).value]));
 try{
@@ -191,8 +195,13 @@ const I18N={
     sell:'Vender',buy:'Comprar',hold:'Esperar',
     aSell:p=>`Vende el ${p} % de tu BTC esta semana`,aBuy:(a,m)=>`Compra ${a} $ esta semana (×${m})`,aHold:'Esta semana no toca comprar ni vender',
     price:p=>`BTC ahora a ${p} $`,wk:(d,n)=>`Señal con el cierre semanal del ${d} · la siguiente, tras el cierre del ${n}`,wkSnap:d=>`Señal con los datos guardados del ${d}`,
-    bt:'Backtest',btFrom:'Desde',btDyn:'Tu estrategia',btDca:'DCA fijo',rInv:'Invertido',rBtc:'BTC acumulado',rSold:'Cobrado en ventas',rVal:'Valor hoy',rRet:'Rentabilidad',rAvg:'Precio medio de compra',
-    btNote:'Simulación semanal con los ajustes de abajo. DCA fijo: la aportación base todas las semanas. Sin comisiones. Valor hoy = BTC × último cierre semanal + lo cobrado en ventas.',
+    bt:'Backtest',btFrom:'Desde',btDyn:'Tu estrategia',btDca:'DCA fijo',rInv:'Invertido',rBtc:'BTC acumulado',rSold:'Reserva en efectivo',rVal:'Valor hoy',rRet:'Rentabilidad',rAvg:'Precio medio de compra',
+    btNote:'Simulación semanal con los ajustes de abajo. Lo vendido se guarda como reserva y se usa para comprar el doble cuando la puntuación baja del umbral de reserva. DCA fijo: la aportación base todas las semanas. Sin comisiones. Valor hoy = BTC × último cierre semanal + reserva sin usar.',
+    lReuse:'Usar reserva por debajo de',lReserve:'Tu reserva de ventas ($)',
+    aBuyRes:(tot,a,r)=>`Compra ${tot} esta semana: ${a} de aportación + ${r} de tu reserva`,
+    hResUsed:left=>`Miedo extremo: toca usar la reserva de ventas. Cuando compres, actualiza tu reserva en Ajustes (te quedarán ${left}).`,
+    hResEmpty:a=>`Miedo extremo: si tienes dinero guardado de ventas, añade hasta ${a} de él. Puedes indicar tu reserva en Ajustes.`,
+    hSell:'Guarda lo que cobres como reserva para comprar más en las semanas de miedo extremo, y súmalo a tu reserva en Ajustes.',
     iF:'Fear & Greed',iD:'Caída desde máximo',iW:'Precio / MA200 semanas',iR:'RSI semanal',weight:'peso',adds:'Aporta'},
   en:{loc:'en-US',desc:'Dynamic DCA dashboard for Bitcoin',loading:'Loading…',live:'Live data · Binance + alternative.me',snap:d=>`APIs unreachable · saved data from ${d}`,
     theme:'Theme',install:'Install app',updMsg:'A new version of SatScope is available.',updGo:'Update',updLater:'Later',tAuto:'Auto',tLight:'Light',tDark:'Dark',calc:'Working out this week’s action…',tick0:'0 fear',tick100:'100 greed',
@@ -203,8 +212,13 @@ const I18N={
     sell:'Sell',buy:'Buy',hold:'Hold',
     aSell:p=>`Sell ${p}% of your BTC this week`,aBuy:(a,m)=>`Buy $${a} this week (×${m})`,aHold:'No buying or selling this week',
     price:p=>`BTC now at $${p}`,wk:(d,n)=>`Signal from the weekly close of ${d} · next one after the close of ${n}`,wkSnap:d=>`Signal from saved data of ${d}`,
-    bt:'Backtest',btFrom:'From',btDyn:'Your strategy',btDca:'Fixed DCA',rInv:'Invested',rBtc:'BTC accumulated',rSold:'Cash from sales',rVal:'Value today',rRet:'Return',rAvg:'Average buy price',
-    btNote:'Weekly simulation with the settings below. Fixed DCA: the base amount every week. No fees. Value today = BTC × last weekly close + cash from sales.',
+    bt:'Backtest',btFrom:'From',btDyn:'Your strategy',btDca:'Fixed DCA',rInv:'Invested',rBtc:'BTC accumulated',rSold:'Cash reserve',rVal:'Value today',rRet:'Return',rAvg:'Average buy price',
+    btNote:'Weekly simulation with the settings below. Sale proceeds are kept as a reserve and used to buy double when the score drops below the reserve threshold. Fixed DCA: the base amount every week. No fees. Value today = BTC × last weekly close + unused reserve.',
+    lReuse:'Use reserve below score',lReserve:'Your sales reserve ($)',
+    aBuyRes:(tot,a,r)=>`Buy ${tot} this week: ${a} contribution + ${r} from your reserve`,
+    hResUsed:left=>`Extreme fear: time to use your sales reserve. Once you buy, update your reserve in Settings (${left} left).`,
+    hResEmpty:a=>`Extreme fear: if you have cash saved from sales, add up to ${a} of it. You can enter your reserve in Settings.`,
+    hSell:'Keep what you get as a reserve to buy more in weeks of extreme fear, and add it to your reserve in Settings.',
     iF:'Fear & Greed',iD:'Drawdown from ATH',iW:'Price / 200-week MA',iR:'Weekly RSI',weight:'weight',adds:'Contributes'}
 };
 let LANG='es';
@@ -304,15 +318,18 @@ async function live(){
 
 // Backtest semanal: tu estrategia frente a un DCA fijo con la aportación base
 function backtest(rows,c){
-  let inv=0,btc=0,bought=0,cash=0,dInv=0,dBtc=0;const vals=[];
+  let inv=0,spent=0,btc=0,bought=0,cash=0,dInv=0,dBtc=0;const vals=[];
   for(const r of rows){
     const s=score(r,c);if(s==null)continue;
     if(s>=c.sellAt){const q=btc*c.sellPct/100;btc-=q;cash+=q*r.p}
-    else{const m=c['m'+Math.min(4,Math.floor(s/20))];if(m>0){const a=c.base*m;inv+=a;btc+=a/r.p;bought+=a/r.p}}
+    else{const m=c['m'+Math.min(4,Math.floor(s/20))];if(m>0){
+      let a=c.base*m;inv+=a;
+      if(s<c.reuseBelow&&cash>0){const x=Math.min(cash,a);cash-=x;a+=x} // la reserva de ventas duplica la compra en miedo extremo
+      spent+=a;btc+=a/r.p;bought+=a/r.p}}
     dInv+=c.base;dBtc+=c.base/r.p;
     vals.push([btc*r.p+cash,dBtc*r.p]);
   }
-  const last=rows.at(-1).p,S={inv,btc,cash,val:btc*last+cash,avg:bought?inv/bought:null},D={inv:dInv,btc:dBtc,cash:0,val:dBtc*last,avg:dBtc?dInv/dBtc:null};
+  const last=rows.at(-1).p,S={inv,btc,cash,val:btc*last+cash,avg:bought?spent/bought:null},D={inv:dInv,btc:dBtc,cash:0,val:dBtc*last,avg:dBtc?dInv/dBtc:null};
   for(const o of[S,D])o.ret=o.inv?(o.val-o.inv)/o.inv*100:0;
   return {S,D,vals};
 }
@@ -326,9 +343,16 @@ function render(){
   $('score').innerHTML=`${fmt(sc)}<small>/100</small>`;
   $('mark').style.left=sc+'%';
   const pill=$('pill'),t=T();
-  if(sell){pill.textContent=t.sell;pill.style.background='var(--sell)';$('action').textContent=t.aSell(fmt(c.sellPct))}
-  else if(mult>0){pill.textContent=t.buy;pill.style.background='var(--buy)';$('action').textContent=t.aBuy(fmt(c.base*mult,2),fmt(mult,2))}
+  let hint='';
+  if(sell){pill.textContent=t.sell;pill.style.background='var(--sell)';$('action').textContent=t.aSell(fmt(c.sellPct));hint=t.hSell}
+  else if(mult>0){
+    pill.textContent=t.buy;pill.style.background='var(--buy)';
+    const buy=c.base*mult,useRes=sc<c.reuseBelow,res=useRes?Math.min(Math.max(c.reserve,0),buy):0;
+    $('action').textContent=res>0?t.aBuyRes(usd(buy+res,2),usd(buy,2),usd(res,2)):t.aBuy(fmt(buy,2),fmt(mult,2));
+    if(useRes)hint=res>0?t.hResUsed(usd(c.reserve-res,2)):t.hResEmpty(usd(buy,2));
+  }
   else{pill.textContent=t.hold;pill.style.background='var(--hold)';$('action').textContent=t.aHold}
+  $('hint').textContent=hint;$('hint').hidden=!hint;
   $('price').innerHTML=`${t.price(fmt(NOW))}<br>${SRC==='live'?t.wk(fdate(r.t),fdate(r.t,7)):t.wkSnap(fdate(r.t))}`;
   const I=[[t.iF,fmt(r.fng??0),p.f,c.wF],[t.iD,'−'+fmt(r.dd)+(LANG==='es'?' %':'%'),p.d,c.wD],[t.iW,fmt(r.w200,2)+'×',p.w,c.wW],[t.iR,fmt(r.rsi),p.r,c.wR]];
   $('inds').innerHTML=I.map(([n,v,s,w])=>`<div class="ind"><span class="n">${n} · ${t.weight} ${fmt(w)}</span><span class="v">${v}</span><div class="mini"><b style="width:${s??0}%"></b></div><span class="n">${t.adds} ${s==null?'–':fmt(s)} / 100</span></div>`).join('');

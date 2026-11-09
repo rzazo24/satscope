@@ -31,7 +31,7 @@ On a base amount of **$10**, by 20-point band:
 |---|---|---|---|---|---|
 | Multiplier | ×5 | ×1 | 0 | 0 | 0 |
 
-At a score of **75 or more**, sell **5%** of the BTC you hold.
+At a score of **80 or more**, sell **2%** of the BTC you hold. The proceeds are kept as a **reserve**: when the score drops below **20** (extreme fear), that week's purchase is doubled with money from the reserve. You can enter your reserve in the settings and the app tells you how much to use.
 
 You can change the weights, multipliers, base amount and sell threshold under "Strategy settings". They're saved in your browser.
 
