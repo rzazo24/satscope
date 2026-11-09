@@ -31,7 +31,7 @@ Sobre una aportación base de **10 $**, según el tramo de 20 puntos:
 |---|---|---|---|---|---|
 | Multiplicador | ×5 | ×1 | 0 | 0 | 0 |
 
-Con una puntuación de **80 o más** se vende un **2 %** del BTC acumulado. Lo cobrado se guarda como **reserva**: cuando la puntuación baja de **20** (miedo extremo), la compra de esa semana se duplica con dinero de la reserva. Puedes indicar tu reserva en los ajustes y la app te dice cuánto usar.
+Con una puntuación de **80 o más** se vende un **2 %** del BTC acumulado. Lo cobrado se guarda como **reserva**: cuando la puntuación baja de **20** (miedo extremo), la compra de esa semana se duplica con dinero de la reserva. Si apuntas tus operaciones, la app lleva la reserva por ti y te dice cuánto usar.
 
 Pesos, multiplicadores, aportación y umbral de venta se pueden cambiar en «Ajustes de la estrategia». Se guardan en el navegador.
 
@@ -43,6 +43,7 @@ Pesos, multiplicadores, aportación y umbral de venta se pueden cambiar en «Aju
 ## Otras funciones
 
 - Español e inglés.
+- **Registro de operaciones:** marca la acción de la semana como hecha o añade operaciones a mano. La app calcula tu BTC, lo aportado, el valor, la rentabilidad, el precio medio, la reserva de ventas y las semanas saltadas, y con ello te dice cuánto BTC vender exactamente y cuánta reserva usar. Se guarda solo en tu navegador; puedes exportarlo e importarlo en CSV.
 - **Backtest** desde el año que elijas: tu estrategia frente a un DCA fijo (invertido, BTC acumulado, ventas, valor, rentabilidad y precio medio).
 - Tema claro, oscuro o automático.
 - Instalable como app (PWA): funciona sin conexión y avisa cuando hay una versión nueva.

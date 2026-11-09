@@ -31,7 +31,7 @@ On a base amount of **$10**, by 20-point band:
 |---|---|---|---|---|---|
 | Multiplier | ×5 | ×1 | 0 | 0 | 0 |
 
-At a score of **80 or more**, sell **2%** of the BTC you hold. The proceeds are kept as a **reserve**: when the score drops below **20** (extreme fear), that week's purchase is doubled with money from the reserve. You can enter your reserve in the settings and the app tells you how much to use.
+At a score of **80 or more**, sell **2%** of the BTC you hold. The proceeds are kept as a **reserve**: when the score drops below **20** (extreme fear), that week's purchase is doubled with money from the reserve. If you log your trades, the app keeps track of the reserve and tells you how much to use.
 
 You can change the weights, multipliers, base amount and sell threshold under "Strategy settings". They're saved in your browser.
 
@@ -43,6 +43,7 @@ You can change the weights, multipliers, base amount and sell threshold under "S
 ## Other features
 
 - Spanish and English.
+- **Trade log:** mark this week's action as done or add trades by hand. The app works out your BTC, money put in, value, return, average price, sales reserve and skipped weeks, and uses them to tell you exactly how much BTC to sell and how much reserve to use. It's only saved in your browser; you can export and import it as CSV.
 - **Backtest** from any year you choose: your strategy against fixed DCA (invested, BTC accumulated, sales, value, return and average price).
 - Light, dark or automatic theme.
 - Installable as an app (PWA): works offline and lets you know when a new version is out.

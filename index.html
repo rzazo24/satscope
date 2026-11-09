@@ -63,6 +63,31 @@ input:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outlin
 .seg[hidden]{display:none}
 .update{position:fixed;left:50%;bottom:max(16px,env(safe-area-inset-bottom,0px));transform:translateX(-50%);width:min(560px,calc(100% - 32px));box-sizing:border-box;display:flex;align-items:center;gap:10px;padding:10px 10px 10px 16px;background:var(--fg);color:var(--bg);border-radius:10px;box-shadow:0 6px 24px rgba(0,0,0,.25);z-index:10;font-size:.9rem}
 .update[hidden]{display:none}
+.btn{font:inherit;font-size:.85rem;font-weight:600;padding:6px 12px;min-height:34px;border-radius:6px;border:1px solid var(--line);background:var(--panel);color:var(--fg);cursor:pointer}
+.btn.pri{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.btn:focus-visible,.lnk:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.lnk{font:inherit;font-size:.85rem;border:0;background:none;color:var(--accent);text-decoration:underline;cursor:pointer;padding:4px}
+.done{margin-top:10px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:.85rem}
+.done:empty{display:none}
+.done .ok{color:var(--buy);font-weight:600}
+.done form{display:flex;flex-wrap:wrap;gap:8px;align-items:end;width:100%}
+.done label{flex:1 1 120px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
+.stat{border:1px solid var(--line);border-radius:6px;padding:8px 10px;display:grid;gap:2px}
+.stat .n{font-size:.75rem;color:var(--muted)}
+.stat .v{font-family:var(--mono);font-weight:600;font-variant-numeric:tabular-nums}
+.ops{max-height:320px;overflow:auto;margin-top:12px;border:1px solid var(--line);border-radius:6px}
+.ops .tbl{font-size:.8rem}
+.ops .tbl th,.ops .tbl td{padding:6px 5px}
+.ops .tbl td:first-child{font-family:var(--mono);color:var(--fg)}
+.ops .tbl td,.ops .tbl th{white-space:nowrap}
+.ops .tbl th:nth-child(2),.ops .tbl td:nth-child(2){text-align:left;font-family:var(--sans)}
+.ops .del{border:0;background:none;color:var(--muted);cursor:pointer;font-size:1rem;padding:2px 4px;min-height:28px;min-width:24px}
+.ops .del:focus-visible{outline:2px solid var(--accent)}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:12px}
+.add{margin-top:12px}
+.add .grid2{align-items:end}
+.stats[hidden],.ops[hidden],.note[hidden]{display:none}
 .bt-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:10px}
 .bt-head h2{margin:0}
 .bt-head label{display:flex;align-items:center;gap:6px;font-size:.8rem;color:var(--muted)}
@@ -117,6 +142,7 @@ try{const t=localStorage.getItem('theme');if(t==='light'||t==='dark')document.do
         <span class="pill" id="pill">–</span>
         <div class="action" id="action" data-i18n="calc"></div>
         <div class="sub" id="hint"></div>
+        <div class="done" id="done"></div>
         <div class="sub" id="price"></div>
       </div>
     </div>
@@ -133,6 +159,33 @@ try{const t=localStorage.getItem('theme');if(t==='light'||t==='dark')document.do
     <h2 data-i18n="hist"></h2>
     <canvas id="chart"></canvas>
     <p class="note" data-i18n="histNote"></p>
+  </section>
+
+  <section>
+    <h2 data-i18n="pf"></h2>
+    <div class="stats" id="pfStats"></div>
+    <p class="note" id="pfEmpty" data-i18n="pfEmpty"></p>
+    <div class="ops" id="pfOps"></div>
+    <p class="note" id="pfStar" data-i18n="star" hidden></p>
+    <details class="add">
+      <summary data-i18n="addOp"></summary>
+      <form id="addForm" class="grid2">
+        <label><span data-i18n="fType"></span><select id="mType"><option value="buy" data-i18n="tyBuy"></option><option value="sell" data-i18n="tySell"></option><option value="res" data-i18n="tyRes"></option></select></label>
+        <label><span data-i18n="fDate"></span><input type="date" id="mDate" required></label>
+        <label><span data-i18n="fUsd"></span><input type="number" id="mUsd" step="any" required></label>
+        <label><span data-i18n="fBtc"></span><input type="number" id="mBtc" step="any" min="0"></label>
+        <label><span data-i18n="fRes"></span><input type="number" id="mRes" step="any" min="0" value="0"></label>
+        <button type="submit" class="btn pri" data-i18n="add"></button>
+      </form>
+      <p class="note" data-i18n="addNote"></p>
+    </details>
+    <div class="row">
+      <button type="button" class="btn" id="expBtn" data-i18n="exp"></button>
+      <button type="button" class="btn" id="impBtn" data-i18n="imp"></button>
+      <input type="file" id="impFile" accept=".csv,text/csv" hidden>
+    </div>
+    <p class="note" id="pfMsg" role="status"></p>
+    <p class="note" data-i18n="pfNote"></p>
   </section>
 
   <section>
@@ -160,7 +213,6 @@ try{const t=localStorage.getItem('theme');if(t==='light'||t==='dark')document.do
         <label><span data-i18n="lSellAt"></span><input type="number" id="sellAt" value="80"></label>
         <label><span data-i18n="lSellPct"></span><input type="number" id="sellPct" value="2" step="0.5"></label>
         <label><span data-i18n="lReuse"></span><input type="number" id="reuseBelow" value="20"></label>
-        <label><span data-i18n="lReserve"></span><input type="number" id="reserve" value="0" min="0" step="1"></label>
       </div>
       <p class="note" style="margin-top:10px" data-i18n="saved"></p>
     </details>
@@ -170,7 +222,7 @@ try{const t=localStorage.getItem('theme');if(t==='light'||t==='dark')document.do
 
 <script>
 const $=id=>document.getElementById(id);
-const IDS=['base','wF','wD','wW','wR','m0','m1','m2','m3','m4','sellAt','sellPct','reuseBelow','reserve'];
+const IDS=['base','wF','wD','wW','wR','m0','m1','m2','m3','m4','sellAt','sellPct','reuseBelow'];
 // Ajustes: solo se guarda lo que el usuario cambia, así los valores por defecto nuevos llegan a todos
 const DEF=Object.fromEntries(IDS.map(k=>[k,+$(k).value]));
 try{
@@ -180,6 +232,8 @@ try{
     for(const k of IDS)if(o[k]!=null&&+o[k]!==OLD[k])keep[k]=+o[k];
     localStorage.setItem('cfg',JSON.stringify(keep));localStorage.removeItem('dcaCfg')}
   const sv=JSON.parse(localStorage.getItem('cfg')||'{}');for(const k of IDS)if(sv[k]!=null)$(k).value=sv[k];
+  // La reserva ya no se escribe a mano: si había una, pasa al registro como ajuste de reserva
+  if(sv.reserve>0&&!localStorage.getItem('ledger')){const d=new Date();localStorage.setItem('ledger',JSON.stringify([{id:'m'+Date.now(),d:new Date(d-d.getTimezoneOffset()*6e4).toISOString().slice(0,10),type:'res',usd:+sv.reserve,btc:0,res:0}]))}
 }catch(e){}
 const cfg=()=>Object.fromEntries(IDS.map(k=>[k,+$(k).value]));
 const clamp=v=>Math.max(0,Math.min(100,v));
@@ -197,11 +251,22 @@ const I18N={
     price:p=>`BTC ahora a ${p} $`,wk:(d,n)=>`Señal con el cierre semanal del ${d} · la siguiente, tras el cierre del ${n}`,wkSnap:d=>`Señal con los datos guardados del ${d}`,
     bt:'Backtest',btFrom:'Desde',btDyn:'Tu estrategia',btDca:'DCA fijo',rInv:'Invertido',rBtc:'BTC acumulado',rSold:'Reserva en efectivo',rVal:'Valor hoy',rRet:'Rentabilidad',rAvg:'Precio medio de compra',
     btNote:'Simulación semanal con los ajustes de abajo. Lo vendido se guarda como reserva y se usa para comprar el doble cuando la puntuación baja del umbral de reserva. DCA fijo: la aportación base todas las semanas. Sin comisiones. Valor hoy = BTC × último cierre semanal + reserva sin usar.',
-    lReuse:'Usar reserva por debajo de',lReserve:'Tu reserva de ventas ($)',
+    lReuse:'Usar reserva por debajo de',
+    aSellBtc:(b,u)=>`Vende ${b} BTC esta semana (≈ ${u})`,
+    markDone:'Marcar como hecha',save:'Guardar',cancel:'Cancelar',undo:'Deshacer',
+    fUsdBuy:'Importe pagado ($)',fBtcBuy:'BTC recibido',fBtcSell:'BTC vendido',fUsdSell:'Recibido ($)',
+    doneBuy:(u,b)=>`Hecha: compraste ${b} BTC por ${u}`,doneSell:(u,b)=>`Hecha: vendiste ${b} BTC por ${u}`,
+    pf:'Tu cartera',pfEmpty:'Aún no hay operaciones. Márcalas como hechas desde la acción de la semana o añádelas a mano.',
+    sBtc:'BTC',sVal:'Valor hoy',sInv:'Dinero aportado',sRet:'Rentabilidad',sAvg:'Precio medio',sRes:'Reserva de ventas',sSkip:'Semanas saltadas',
+    cDate:'Fecha',cType:'Tipo',cUsd:'$',cBtc:'BTC',tyBuy:'Compra',tySell:'Venta',tyRes:'Ajuste de reserva',del:'Borrar',delQ:'¿Borrar esta operación?',
+    addOp:'Añadir operación a mano',fType:'Tipo',fDate:'Fecha',fUsd:'Importe ($)',fBtc:'BTC',fRes:'De la reserva ($)',add:'Añadir',
+    addNote:'Compra: importe total pagado y BTC recibido; «De la reserva» es la parte que salió de la reserva de ventas. Venta: dólares recibidos y BTC vendido. Ajuste de reserva: dinero que sumas (o restas, en negativo) a la reserva.',
+    exp:'Exportar CSV',imp:'Importar CSV',impOk:n=>n===1?'Importada 1 operación nueva.':`Importadas ${n} operaciones nuevas.`,star:'* Pagada en parte con la reserva de ventas.',tooMuch:b=>`No puedes vender más BTC del que tienes registrado (${b}).`,impErr:'No se ha podido leer el archivo: debe ser un CSV exportado desde SatScope.',
+    pfNote:'El registro se guarda solo en este navegador. Exporta una copia de vez en cuando.',
     aBuyRes:(tot,a,r)=>`Compra ${tot} esta semana: ${a} de aportación + ${r} de tu reserva`,
-    hResUsed:left=>`Miedo extremo: toca usar la reserva de ventas. Cuando compres, actualiza tu reserva en Ajustes (te quedarán ${left}).`,
-    hResEmpty:a=>`Miedo extremo: si tienes dinero guardado de ventas, añade hasta ${a} de él. Puedes indicar tu reserva en Ajustes.`,
-    hSell:'Guarda lo que cobres como reserva para comprar más en las semanas de miedo extremo, y súmalo a tu reserva en Ajustes.',
+    hResUsed:left=>`Miedo extremo: se usa tu reserva de ventas (después quedarán ${left}).`,
+    hResEmpty:'Miedo extremo: si tuvieras reserva de ventas, esta semana se usaría para comprar el doble.',
+    hSell:'Lo que cobres pasa a tu reserva de ventas y se usará para comprar más en las semanas de miedo extremo.',
     iF:'Fear & Greed',iD:'Caída desde máximo',iW:'Precio / MA200 semanas',iR:'RSI semanal',weight:'peso',adds:'Aporta'},
   en:{loc:'en-US',desc:'Dynamic DCA dashboard for Bitcoin',loading:'Loading…',live:'Live data · Binance + alternative.me',snap:d=>`APIs unreachable · saved data from ${d}`,
     theme:'Theme',install:'Install app',updMsg:'A new version of SatScope is available.',updGo:'Update',updLater:'Later',tAuto:'Auto',tLight:'Light',tDark:'Dark',calc:'Working out this week’s action…',tick0:'0 fear',tick100:'100 greed',
@@ -214,11 +279,22 @@ const I18N={
     price:p=>`BTC now at $${p}`,wk:(d,n)=>`Signal from the weekly close of ${d} · next one after the close of ${n}`,wkSnap:d=>`Signal from saved data of ${d}`,
     bt:'Backtest',btFrom:'From',btDyn:'Your strategy',btDca:'Fixed DCA',rInv:'Invested',rBtc:'BTC accumulated',rSold:'Cash reserve',rVal:'Value today',rRet:'Return',rAvg:'Average buy price',
     btNote:'Weekly simulation with the settings below. Sale proceeds are kept as a reserve and used to buy double when the score drops below the reserve threshold. Fixed DCA: the base amount every week. No fees. Value today = BTC × last weekly close + unused reserve.',
-    lReuse:'Use reserve below score',lReserve:'Your sales reserve ($)',
+    lReuse:'Use reserve below score',
+    aSellBtc:(b,u)=>`Sell ${b} BTC this week (≈ ${u})`,
+    markDone:'Mark as done',save:'Save',cancel:'Cancel',undo:'Undo',
+    fUsdBuy:'Amount paid ($)',fBtcBuy:'BTC received',fBtcSell:'BTC sold',fUsdSell:'Received ($)',
+    doneBuy:(u,b)=>`Done: you bought ${b} BTC for ${u}`,doneSell:(u,b)=>`Done: you sold ${b} BTC for ${u}`,
+    pf:'Your portfolio',pfEmpty:'No trades yet. Mark them as done from this week\'s action or add them by hand.',
+    sBtc:'BTC',sVal:'Value today',sInv:'Money put in',sRet:'Return',sAvg:'Average price',sRes:'Sales reserve',sSkip:'Weeks skipped',
+    cDate:'Date',cType:'Type',cUsd:'$',cBtc:'BTC',tyBuy:'Buy',tySell:'Sell',tyRes:'Reserve adjustment',del:'Delete',delQ:'Delete this trade?',
+    addOp:'Add a trade by hand',fType:'Type',fDate:'Date',fUsd:'Amount ($)',fBtc:'BTC',fRes:'From reserve ($)',add:'Add',
+    addNote:'Buy: total amount paid and BTC received; "From reserve" is the part that came from the sales reserve. Sell: dollars received and BTC sold. Reserve adjustment: money you add to (or take from, as a negative) the reserve.',
+    exp:'Export CSV',imp:'Import CSV',impOk:n=>n===1?'Imported 1 new trade.':`Imported ${n} new trades.`,star:'* Partly paid with the sales reserve.',tooMuch:b=>`You can't sell more BTC than you have logged (${b}).`,impErr:'Couldn\'t read the file: it must be a CSV exported from SatScope.',
+    pfNote:'The log is only saved in this browser. Export a copy now and then.',
     aBuyRes:(tot,a,r)=>`Buy ${tot} this week: ${a} contribution + ${r} from your reserve`,
-    hResUsed:left=>`Extreme fear: time to use your sales reserve. Once you buy, update your reserve in Settings (${left} left).`,
-    hResEmpty:a=>`Extreme fear: if you have cash saved from sales, add up to ${a} of it. You can enter your reserve in Settings.`,
-    hSell:'Keep what you get as a reserve to buy more in weeks of extreme fear, and add it to your reserve in Settings.',
+    hResUsed:left=>`Extreme fear: your sales reserve is used (${left} left afterwards).`,
+    hResEmpty:'Extreme fear: if you had a sales reserve, it would be used this week to buy double.',
+    hSell:'What you get goes into your sales reserve and will be used to buy more in weeks of extreme fear.',
     iF:'Fear & Greed',iD:'Drawdown from ATH',iW:'Price / 200-week MA',iR:'Weekly RSI',weight:'weight',adds:'Contributes'}
 };
 let LANG='es';
@@ -335,6 +411,49 @@ function backtest(rows,c){
 }
 
 let ROWS=null,HIST=null,NOW=null;
+
+// Registro de operaciones: se guarda solo en este navegador.
+// buy: usd = total pagado, res = parte pagada con la reserva · sell: usd = recibido · res: ajuste de la reserva
+const okOp=o=>o&&/^\d{4}-\d{2}-\d{2}$/.test(o.d)&&['buy','sell','res'].includes(o.type)&&isFinite(o.usd)&&isFinite(o.btc)&&isFinite(o.res);
+let LEDGER=[];
+try{LEDGER=JSON.parse(localStorage.getItem('ledger')||'[]').map(o=>({...o,usd:+o.usd,btc:+o.btc||0,res:+o.res||0})).filter(okOp)}catch(e){}
+const newId=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+function saveLedger(){
+  LEDGER.sort((a,b)=>a.d<b.d?-1:a.d>b.d?1:0);
+  try{localStorage.setItem('ledger',JSON.stringify(LEDGER))}catch(e){}
+  render();
+}
+function ledgerStats(){
+  let btc=0,bought=0,spent=0,fromRes=0,sold=0,adj=0;
+  for(const o of LEDGER){
+    if(o.type==='buy'){btc+=o.btc;bought+=o.btc;spent+=o.usd;fromRes+=o.res}
+    else if(o.type==='sell'){btc-=o.btc;sold+=o.usd}
+    else adj+=o.usd;
+  }
+  return {btc:Math.max(btc,0),reserve:sold-fromRes+adj,invested:spent-fromRes+adj,avg:bought?spent/bought:null};
+}
+const today=()=>{const d=new Date();return new Date(d-d.getTimezoneOffset()*6e4).toISOString().slice(0,10)};
+const addDays=(iso,n)=>new Date(Date.parse(iso)+n*864e5).toISOString().slice(0,10);
+// Semana a la que pertenece una operación: la que va del lunes al domingo tras el cierre semanal t
+const inWeek=(d,t)=>SRC==='live'?(d>t&&d<=addDays(t,7)):(d>=t&&d<addDays(t,7));
+function decide(sc,c){
+  if(sc==null)return {kind:'none'};
+  if(sc>=c.sellAt)return {kind:'sell'};
+  const m=c['m'+Math.min(4,Math.floor(sc/20))];
+  return m>0?{kind:'buy',mult:m,usd:c.base*m}:{kind:'hold'};
+}
+// Semanas cerradas desde la primera operación en las que tocaba comprar o vender y no se apuntó nada
+function skipped(c){
+  const first=LEDGER.find(o=>o.type!=='res');if(!first)return 0;
+  let n=0;
+  for(const r of ROWS.slice(0,-1)){
+    if(addDays(r.t,7)<first.d)continue;
+    const a=decide(score(r,c),c);
+    if((a.kind==='buy'||a.kind==='sell')&&!LEDGER.some(o=>o.type===a.kind&&inWeek(o.d,r.t)))n++;
+  }
+  return n;
+}
+let CUR=null,FORM=false;
 function render(){
   if(!ROWS)return;const c=cfg();
   try{const d={};for(const k of IDS)if(c[k]!==DEF[k])d[k]=c[k];localStorage.setItem('cfg',JSON.stringify(d))}catch(e){}
@@ -343,22 +462,97 @@ function render(){
   $('score').innerHTML=`${fmt(sc)}<small>/100</small>`;
   $('mark').style.left=sc+'%';
   const pill=$('pill'),t=T();
-  let hint='';
-  if(sell){pill.textContent=t.sell;pill.style.background='var(--sell)';$('action').textContent=t.aSell(fmt(c.sellPct));hint=t.hSell}
+  let hint='';const LS=ledgerStats();CUR={kind:'hold',t:r.t};
+  if(sell){
+    pill.textContent=t.sell;pill.style.background='var(--sell)';
+    const q=LS.btc*c.sellPct/100;
+    $('action').textContent=q>0?t.aSellBtc(fmt(q,6),usd(q*NOW,2)):t.aSell(fmt(c.sellPct));hint=t.hSell;
+    CUR={kind:'sell',t:r.t,btc:q,usd:q*NOW,res:0};
+  }
   else if(mult>0){
     pill.textContent=t.buy;pill.style.background='var(--buy)';
-    const buy=c.base*mult,useRes=sc<c.reuseBelow,res=useRes?Math.min(Math.max(c.reserve,0),buy):0;
+    const buy=c.base*mult,useRes=sc<c.reuseBelow,res=useRes?Math.min(Math.max(LS.reserve,0),buy):0;
     $('action').textContent=res>0?t.aBuyRes(usd(buy+res,2),usd(buy,2),usd(res,2)):t.aBuy(fmt(buy,2),fmt(mult,2));
-    if(useRes)hint=res>0?t.hResUsed(usd(c.reserve-res,2)):t.hResEmpty(usd(buy,2));
+    if(useRes)hint=res>0?t.hResUsed(usd(LS.reserve-res,2)):t.hResEmpty;
+    CUR={kind:'buy',t:r.t,usd:buy+res,btc:(buy+res)/NOW,res};
   }
   else{pill.textContent=t.hold;pill.style.background='var(--hold)';$('action').textContent=t.aHold}
   $('hint').textContent=hint;$('hint').hidden=!hint;
+  renderDone();renderPf(c,LS);
   $('price').innerHTML=`${t.price(fmt(NOW))}<br>${SRC==='live'?t.wk(fdate(r.t),fdate(r.t,7)):t.wkSnap(fdate(r.t))}`;
   const I=[[t.iF,fmt(r.fng??0),p.f,c.wF],[t.iD,'−'+fmt(r.dd)+(LANG==='es'?' %':'%'),p.d,c.wD],[t.iW,fmt(r.w200,2)+'×',p.w,c.wW],[t.iR,fmt(r.rsi),p.r,c.wR]];
   $('inds').innerHTML=I.map(([n,v,s,w])=>`<div class="ind"><span class="n">${n} · ${t.weight} ${fmt(w)}</span><span class="v">${v}</span><div class="mini"><b style="width:${s??0}%"></b></div><span class="n">${t.adds} ${s==null?'–':fmt(s)} / 100</span></div>`).join('');
   draw(ROWS.slice(-104).map(x=>score(x,c)),c);
   renderBt(c);
 }
+function renderDone(){
+  const t=T(),el=$('done');
+  if(!CUR||(CUR.kind!=='buy'&&CUR.kind!=='sell')){el.innerHTML='';return}
+  const mine=LEDGER.filter(o=>o.type===CUR.kind&&inWeek(o.d,CUR.t));
+  if(mine.length){
+    const o=mine.at(-1);
+    el.innerHTML=`<span class="ok">✓ ${(o.type==='buy'?t.doneBuy:t.doneSell)(usd(o.usd,2),fmt(o.btc,8))}</span><button type="button" class="lnk" data-undo="${o.id}">${t.undo}</button>`;
+  }else if(FORM){
+    const buy=CUR.kind==='buy';
+    el.innerHTML=`<form id="doneForm">
+      <label>${buy?t.fUsdBuy:t.fUsdSell}<input type="number" id="dUsd" step="any" min="0" required value="${CUR.usd.toFixed(2)}"></label>
+      <label>${buy?t.fBtcBuy:t.fBtcSell}<input type="number" id="dBtc" step="any" min="0" required value="${CUR.btc.toFixed(8)}"></label>
+      <button type="submit" class="btn pri">${t.save}</button><button type="button" class="btn" data-cancel>${t.cancel}</button></form>`;
+  }else el.innerHTML=`<button type="button" class="btn pri" data-mark>${t.markDone}</button>`;
+}
+$('done').addEventListener('click',e=>{
+  if(e.target.closest('[data-mark]')){FORM=true;renderDone();$('dUsd').focus()}
+  else if(e.target.closest('[data-cancel]')){FORM=false;renderDone()}
+  else{const u=e.target.closest('[data-undo]');if(u){LEDGER=LEDGER.filter(o=>o.id!==u.dataset.undo);saveLedger()}}
+});
+$('done').addEventListener('submit',e=>{
+  e.preventDefault();const u=+$('dUsd').value,b=+$('dBtc').value;if(!(u>0&&b>0))return;
+  if(CUR.kind==='sell'&&b>ledgerStats().btc+1e-9){$('dBtc').setCustomValidity(T().tooMuch(fmt(ledgerStats().btc,8)));$('dBtc').reportValidity();$('dBtc').oninput=()=>$('dBtc').setCustomValidity('');return}
+  LEDGER.push({id:newId(),d:today(),type:CUR.kind,usd:u,btc:b,res:CUR.kind==='buy'?Math.min(CUR.res,u):0});
+  FORM=false;saveLedger();
+});
+function renderPf(c,LS){
+  const t=T(),has=LEDGER.length>0;
+  $('pfEmpty').hidden=has;$('pfStar').hidden=!LEDGER.some(o=>o.res>0);$('pfOps').hidden=!has;$('pfStats').hidden=!has;$('expBtn').disabled=!has;
+  if(!has)return;
+  const val=LS.btc*NOW+LS.reserve,ret=LS.invested>0?(val-LS.invested)/LS.invested*100:null;
+  const S=[[t.sBtc,fmt(LS.btc,8)],[t.sVal,usd(val,2)],[t.sInv,usd(LS.invested,2)],[t.sRet,ret==null?'–':pct(ret)],[t.sAvg,LS.avg?usd(LS.avg):'–'],[t.sRes,usd(LS.reserve,2)],[t.sSkip,fmt(skipped(c))]];
+  $('pfStats').innerHTML=S.map(([n,v])=>`<div class="stat"><span class="n">${n}</span><span class="v">${v}</span></div>`).join('');
+  const ty={buy:t.tyBuy,sell:t.tySell,res:t.tyRes};
+  $('pfOps').innerHTML=`<table class="tbl"><thead><tr><th scope="col">${t.cDate}</th><th scope="col">${t.cType}</th><th scope="col">${t.cUsd}</th><th scope="col">${t.cBtc}</th><th scope="col"><span hidden>${t.del}</span></th></tr></thead><tbody>`+
+    [...LEDGER].reverse().map(o=>`<tr><td>${new Date(o.d).toLocaleDateString(t.loc,{day:'2-digit',month:'2-digit',year:'2-digit',timeZone:'UTC'})}</td><td>${ty[o.type]}${o.res>0?' *':''}</td><td>${fmt(o.usd,2)}</td><td>${o.type==='res'?'–':fmt(o.btc,6)}</td><td><button type="button" class="del" data-del="${o.id}" aria-label="${t.del}">×</button></td></tr>`).join('')+'</tbody></table>';
+}
+$('pfOps').addEventListener('click',e=>{const b=e.target.closest('[data-del]');if(b&&confirm(T().delQ)){LEDGER=LEDGER.filter(o=>o.id!==b.dataset.del);saveLedger()}});
+$('mDate').value=today();
+$('addForm').addEventListener('submit',e=>{
+  e.preventDefault();
+  const o={id:newId(),d:$('mDate').value,type:$('mType').value,usd:+$('mUsd').value,btc:+$('mBtc').value||0,res:+$('mRes').value||0};
+  if(o.type!=='buy')o.res=0;if(o.type==='res')o.btc=0;
+  if(!okOp(o)||(o.type!=='res'&&!(o.usd>0&&o.btc>0))||(o.type==='res'&&!o.usd))return;
+  o.res=Math.min(o.res,o.usd);
+  if(o.type==='sell'&&o.btc>ledgerStats().btc+1e-9){$('pfMsg').textContent=T().tooMuch(fmt(ledgerStats().btc,8));return}
+  $('pfMsg').textContent='';
+  LEDGER.push(o);saveLedger();$('mUsd').value='';$('mBtc').value='';$('mRes').value=0;
+});
+// CSV: fecha,tipo,usd,btc,reserva_usada (tipo: buy | sell | res)
+$('expBtn').addEventListener('click',()=>{
+  const csv='date,type,usd,btc,from_reserve\n'+LEDGER.map(o=>[o.d,o.type,o.usd,o.btc,o.res].join(',')).join('\n')+'\n';
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download=`satscope-${today()}.csv`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+});
+$('impBtn').addEventListener('click',()=>$('impFile').click());
+$('impFile').addEventListener('change',async e=>{
+  const f=e.target.files[0];e.target.value='';if(!f)return;
+  try{
+    const lines=(await f.text()).trim().split(/\r?\n/);
+    if(!/^date,type,usd,btc/.test(lines[0]))throw 0;
+    const key=o=>[o.d,o.type,o.usd,o.btc,o.res].join('|'),have=new Set(LEDGER.map(key));let n=0;
+    for(const l of lines.slice(1)){
+      const [d,type,u,b,r]=l.split(',');const o={id:newId(),d,type,usd:+u,btc:+b||0,res:+r||0};
+      if(!okOp(o))throw 0;if(!have.has(key(o))){LEDGER.push(o);have.add(key(o));n++}
+    }
+    saveLedger();$('pfMsg').textContent=T().impOk(n);
+  }catch(_){$('pfMsg').textContent=T().impErr}
+});
 function renderBt(c){
   const t=T(),sel=$('btFrom');
   const years=[...new Set(HIST.map(r=>r.t.slice(0,4)))];
