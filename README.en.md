@@ -19,7 +19,9 @@ A weighted average of four indicators, each mapped to a 0–100 scale:
 | Fear & Greed | 30 | Raw value from alternative.me |
 | Drawdown from all-time high | 40 | 0% drawdown = 100, −80% = 0 |
 | Price / 200-week moving average | 15 | Logarithmic: ×1 = 0, ×5 = 100 |
-| Weekly RSI (14) | 15 | Raw value |
+| Weekly RSI (14, Wilder) | 15 | Raw value |
+
+The signal only uses **closed weeks**: the weekly close is Sunday's close in UTC, the same as Binance's weekly candle, so the action doesn't change during the week. The 200-week average uses 200 weekly closes and the RSI uses Wilder's smoothing, like TradingView.
 
 ### Weekly rules
 
@@ -41,6 +43,7 @@ You can change the weights, multipliers, base amount and sell threshold under "S
 ## Other features
 
 - Spanish and English.
+- **Backtest** from any year you choose: your strategy against fixed DCA (invested, BTC accumulated, sales, value, return and average price).
 - Light, dark or automatic theme.
 - Installable as an app (PWA): works offline and lets you know when a new version is out.
 - Visit analytics with [Vercel Web Analytics](https://vercel.com/docs/analytics): no cookies and no personal data.
