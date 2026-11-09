@@ -65,7 +65,12 @@ canvas{width:100%;height:180px;display:block}
 details summary{cursor:pointer;font-weight:600}
 .grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:12px}
 label{display:grid;gap:4px;font-size:.8rem}
-input{font:inherit;padding:6px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--fg);width:100%;box-sizing:border-box}
+/* Todos los campos iguales (texto, número, fecha y desplegables). 16 px evita el zoom automático de iPhone al tocarlos;
+   la fecha pierde el estilo nativo de Safari, que la hacía más ancha que su columna, más alta y centrada */
+input:not([type=checkbox]),select{font:inherit;font-size:16px;line-height:1.25;padding:7px 8px;min-height:40px;margin:0;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--fg);width:100%;max-width:100%;min-width:0;box-sizing:border-box;display:block}
+input[type=date]{-webkit-appearance:none;appearance:none;text-align:left}
+input[type=date]::-webkit-date-and-time-value{text-align:left;margin:0}
+input[type=date]::-webkit-datetime-edit{padding:0}
 input:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .note{font-size:.75rem;color:var(--muted)}
 .ctrls{display:flex;gap:8px;flex-wrap:wrap}
@@ -132,11 +137,12 @@ dialog.help::backdrop{background:rgba(0,0,0,.45)}
 .add{margin-top:12px}
 .add .grid2{align-items:end}
 .stats[hidden],.ops[hidden],.note[hidden],label[hidden]{display:none}
-#wallet{font-family:var(--mono);font-size:.8rem}
+#wallet{font-family:var(--mono)}
 .bt-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:10px}
 .bt-head h2{margin:0}
 .bt-head label{display:flex;align-items:center;gap:6px;font-size:.8rem;color:var(--muted)}
-select{font:inherit;font-size:.85rem;padding:4px 6px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--fg)}
+/* Selector de año del backtest: compacto, en línea con el título */
+.bt-head select{width:auto;display:inline-block;min-height:32px;font-size:.85rem;padding:4px 6px}
 select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .tbl{width:100%;border-collapse:collapse;font-size:.85rem}
 .tbl th,.tbl td{padding:6px 4px;border-bottom:1px solid var(--line);text-align:right;font-variant-numeric:tabular-nums}
@@ -587,7 +593,7 @@ const I18N={
     sBtc:'{U}',sVal:'Valor hoy',sInv:'Dinero aportado',sRet:'Rentabilidad',sAvg:'Precio medio',sRes:'Reserva de ventas',sSkip:'Semanas saltadas',
     cDate:'Fecha',cType:'Tipo',cUsd:'$',cBtc:'{U}',tyBuy:'Compra',tySell:'Venta',tyRes:'Ajuste de reserva',del:'Borrar',delQ:'¿Borrar esta operación?',
     addOp:'Añadir operación a mano',fType:'Tipo',fDate:'Fecha',fUsd:'Importe ($)',fBtc:'{U}',fRes:'De la reserva ($)',add:'Añadir',
-    addNote:'Compra: importe total pagado y BTC recibido; «De la reserva» es la parte que salió de la reserva de ventas. Venta: dólares recibidos y BTC vendido. Ajuste de reserva: dinero que sumas (o restas, en negativo) a la reserva.',
+    addNote:'Compra: importe total pagado y {U} recibido; «De la reserva» es la parte que salió de la reserva de ventas. Venta: dólares recibidos y {U} vendido. Ajuste de reserva: dinero que sumas (o restas, en negativo) a la reserva.',
     exp:'Exportar CSV',imp:'Importar CSV',impOk:n=>n===1?'Importada 1 operación nueva.':`Importadas ${n} operaciones nuevas.`,star:'* Pagada en parte con la reserva de ventas.',tooMuch:b=>`No puedes vender más {U} del que tienes registrado (${b}).`,impErr:'No se ha podido leer el archivo: debe ser un CSV exportado desde SatScope.',
     pfNote:'El registro se guarda solo en este navegador. Exporta una copia de vez en cuando.',
     aBuyRes:(tot,a,r)=>`Compra ${tot} esta semana: ${a} de aportación + ${r} de tu reserva`,
@@ -622,7 +628,7 @@ const I18N={
     sBtc:'{U}',sVal:'Value today',sInv:'Money put in',sRet:'Return',sAvg:'Average price',sRes:'Sales reserve',sSkip:'Weeks skipped',
     cDate:'Date',cType:'Type',cUsd:'$',cBtc:'{U}',tyBuy:'Buy',tySell:'Sell',tyRes:'Reserve adjustment',del:'Delete',delQ:'Delete this trade?',
     addOp:'Add a trade by hand',fType:'Type',fDate:'Date',fUsd:'Amount ($)',fBtc:'{U}',fRes:'From reserve ($)',add:'Add',
-    addNote:'Buy: total amount paid and BTC received; "From reserve" is the part that came from the sales reserve. Sell: dollars received and BTC sold. Reserve adjustment: money you add to (or take from, as a negative) the reserve.',
+    addNote:'Buy: total amount paid and {U} received; "From reserve" is the part that came from the sales reserve. Sell: dollars received and {U} sold. Reserve adjustment: money you add to (or take from, as a negative) the reserve.',
     exp:'Export CSV',imp:'Import CSV',impOk:n=>n===1?'Imported 1 new trade.':`Imported ${n} new trades.`,star:'* Partly paid with the sales reserve.',tooMuch:b=>`You can't sell more {U} than you have logged (${b}).`,impErr:'Couldn\'t read the file: it must be a CSV exported from SatScope.',
     pfNote:'The log is only saved in this browser. Export a copy now and then.',
     aBuyRes:(tot,a,r)=>`Buy ${tot} this week: ${a} contribution + ${r} from your reserve`,

@@ -387,3 +387,22 @@ test('Los botones de la cartera tienen la misma altura (también el enlace del r
   }
 });
 
+test('Los campos de los formularios tienen el mismo ancho y alto (también la fecha)', { skip }, async () => {
+  const p = await open({ width: 390, storage: { seenHelp: '1', unit: 'WBTC' } });
+  try {
+    await p.ev("document.querySelector('details.add').open=true;document.querySelector('details:has(#base)').open=true");
+    const box = sel => p.ev(`[...document.querySelectorAll(${JSON.stringify(sel)})].map(e=>{const r=e.getBoundingClientRect(),c=e.closest('label').getBoundingClientRect();return [e.id,Math.round(r.width),Math.round(r.height),Math.round(c.width)]})`);
+    // Formulario «Añadir operación a mano» (una columna a 390 px): todos iguales y dentro de su columna
+    const add = await box('#addForm input,#addForm select');
+    assert.equal(new Set(add.map(x => x[1])).size, 1, `anchos distintos: ${JSON.stringify(add)}`);
+    assert.equal(new Set(add.map(x => x[2])).size, 1, `altos distintos: ${JSON.stringify(add)}`);
+    for (const [id, w, , col] of add) assert.ok(w <= col, `${id} se sale de su columna (${w} > ${col})`);
+    assert.equal(await p.ev("getComputedStyle(document.getElementById('mDate')).textAlign"), 'left');
+    // Ajustes: números, desplegable y dirección con la misma altura; 16 px para que iPhone no haga zoom
+    const cfgBoxes = await box('details:has(#base) input:not([type=checkbox]),details:has(#base) select');
+    assert.equal(new Set(cfgBoxes.map(x => x[2])).size, 1, `altos distintos: ${JSON.stringify(cfgBoxes)}`);
+    assert.equal(await p.ev("getComputedStyle(document.getElementById('base')).fontSize"), '16px');
+    assert.equal(await p.ev('document.documentElement.scrollWidth > innerWidth'), false);
+  } finally { await p.close(); }
+});
+
