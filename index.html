@@ -65,9 +65,11 @@ canvas{width:100%;height:180px;display:block}
 details summary{cursor:pointer;font-weight:600}
 .grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:12px}
 label{display:grid;gap:4px;font-size:.8rem}
+/* Lo que está oculto (atributo hidden) no se muestra nunca, aunque otra regla le dé display */
+[hidden]{display:none!important}
 /* Todos los campos iguales (texto, número, fecha y desplegables). 16 px evita el zoom automático de iPhone al tocarlos;
    la fecha pierde el estilo nativo de Safari, que la hacía más ancha que su columna, más alta y centrada */
-input:not([type=checkbox]),select{font:inherit;font-size:16px;line-height:1.25;padding:7px 8px;min-height:40px;margin:0;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--fg);width:100%;max-width:100%;min-width:0;box-sizing:border-box;display:block}
+input:not([type=checkbox]):not([type=file]),select{font:inherit;font-size:16px;line-height:1.25;padding:7px 8px;min-height:40px;margin:0;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--fg);width:100%;max-width:100%;min-width:0;box-sizing:border-box;display:block}
 input[type=date]{-webkit-appearance:none;appearance:none;text-align:left}
 input[type=date]::-webkit-date-and-time-value{text-align:left;margin:0}
 input[type=date]::-webkit-datetime-edit{padding:0}

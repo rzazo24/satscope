@@ -409,3 +409,13 @@ test('Los campos de los formularios tienen el mismo ancho y alto (también la fe
   } finally { await p.close(); }
 });
 
+test('Nada marcado como oculto se ve (p. ej. el selector de archivo de «Importar CSV»)', { skip }, async () => {
+  const p = await open({ width: 390, storage: { seenHelp: '1' } });
+  try {
+    await p.ev("document.querySelectorAll('details').forEach(d=>d.open=true)");
+    const shown = await p.ev("[...document.querySelectorAll('[hidden]')].filter(e=>getComputedStyle(e).display!=='none').map(e=>e.id||e.tagName)");
+    assert.deepEqual(shown, []);
+    assert.equal(await p.ev("document.getElementById('impFile').getBoundingClientRect().height"), 0);
+  } finally { await p.close(); }
+});
+
