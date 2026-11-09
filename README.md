@@ -65,13 +65,22 @@ python3 -m http.server 8000
 
 ## Tests
 
-La lógica (RSI de Wilder, indicadores, puntuación, backtest e instantánea) tiene tests que se cargan directamente de `index.html`:
+Sin dependencias: solo Node 22 o superior.
 
 ```bash
 node --test
 ```
 
-Se ejecutan también en GitHub Actions con cada push.
+| Archivo | Qué comprueba |
+|---|---|
+| `tests/logic.test.mjs` | RSI de Wilder (con un ejemplo de referencia), escalas de los indicadores, puntuación, backtest e instantánea |
+| `tests/data.test.mjs` | Carga de datos: paginación de Binance, solo semanas cerradas, MA200, caída, respaldo de Bitstamp y de Fear & Greed |
+| `tests/ledger.test.mjs` | Registro de operaciones: cartera, acción semanal, semanas saltadas, CSV y migración de ajustes |
+| `tests/i18n.test.mjs` | Que español e inglés tengan los mismos textos y que no quede ninguno sin traducir |
+| `tests/files.test.mjs` | Que lo que usan la página, el manifest y el service worker exista y se publique |
+| `tests/e2e.test.mjs` | La página real en Chrome con datos simulados: carga, respaldos, registro, idioma, tema y migración. Se salta si no hay Chrome (o usa `CHROME_PATH`) |
+
+Los tests cargan el código directamente de `index.html`, así que prueban exactamente lo que se publica. Se ejecutan en GitHub Actions con cada push.
 
 ## Despliegue
 

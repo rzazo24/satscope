@@ -244,9 +244,7 @@ const DEF=Object.fromEntries(IDS.map(k=>[k,+$(k).value]));
 try{
   // Migración: la versión anterior guardaba todos los valores en 'dcaCfg'; se conserva solo lo que difería de sus valores por defecto
   const old=localStorage.getItem('dcaCfg');
-  if(old!=null){const OLD={base:5,wF:30,wD:40,wW:15,wR:15,m0:5,m1:1,m2:0,m3:0,m4:0,sellAt:75,sellPct:5},o=JSON.parse(old),keep={};
-    for(const k of IDS)if(o[k]!=null&&+o[k]!==OLD[k])keep[k]=+o[k];
-    localStorage.setItem('cfg',JSON.stringify(keep));localStorage.removeItem('dcaCfg')}
+  if(old!=null){localStorage.setItem('cfg',JSON.stringify(migrateCfg(JSON.parse(old),IDS)));localStorage.removeItem('dcaCfg')}
   const sv=JSON.parse(localStorage.getItem('cfg')||'{}');for(const k of IDS)if(sv[k]!=null)$(k).value=sv[k];
   // La reserva ya no se escribe a mano: si había una, pasa al registro como ajuste de reserva
   if(sv.reserve>0&&!localStorage.getItem('ledger')){const d=new Date();localStorage.setItem('ledger',JSON.stringify([{id:'m'+Date.now(),d:new Date(d-d.getTimezoneOffset()*6e4).toISOString().slice(0,10),type:'res',usd:+sv.reserve,btc:0,res:0}]))}
@@ -512,6 +510,32 @@ function skipped(c){
   }
   return n;
 }
+// Migración de ajustes: la versión anterior guardaba todos los valores; se conserva solo lo que
+// difería de sus valores por defecto, para que los valores por defecto nuevos lleguen a todos
+// (la función se declara aquí pero se usa al arrancar, así que no puede depender de constantes de más abajo)
+function migrateCfg(old,ids){
+  const OLD_DEF={base:5,wF:30,wD:40,wW:15,wR:15,m0:5,m1:1,m2:0,m3:0,m4:0,sellAt:75,sellPct:5},keep={};
+  for(const k of ids)if(old[k]!=null&&+old[k]!==OLD_DEF[k])keep[k]=+old[k];
+  return keep;
+}
+// CSV del registro: date,type,usd,btc,from_reserve (type: buy | sell | res)
+const CSV_HEAD='date,type,usd,btc,from_reserve';
+function toCSV(list){return CSV_HEAD+'\n'+list.map(o=>[o.d,o.type,o.usd,o.btc,o.res].join(',')).join('\n')+'\n'}
+function parseCSV(text){
+  const lines=String(text).trim().split(/\r?\n/);
+  if(!/^date,type,usd,btc/.test(lines[0]))throw new Error('cabecera');
+  return lines.slice(1).filter(l=>l.trim()).map(l=>{
+    const [d,type,u,b,r]=l.split(',');const o={id:newId(),d,type,usd:+u,btc:+b||0,res:+r||0};
+    if(!okOp(o))throw new Error('fila: '+l);
+    return o;
+  });
+}
+// Añade las operaciones nuevas y salta las que ya estaban (misma fecha, tipo e importes)
+function mergeOps(list,incoming){
+  const key=o=>[o.d,o.type,o.usd,o.btc,o.res].join('|'),have=new Set(list.map(key)),out=[...list];let added=0;
+  for(const o of incoming)if(!have.has(key(o))){out.push(o);have.add(key(o));added++}
+  return {list:out,added};
+}
 let CUR=null,FORM=false;
 function render(){
   if(!ROWS)return;const c=cfg();
@@ -597,21 +621,15 @@ $('addForm').addEventListener('submit',e=>{
 });
 // CSV: fecha,tipo,usd,btc,reserva_usada (tipo: buy | sell | res)
 $('expBtn').addEventListener('click',()=>{
-  const csv='date,type,usd,btc,from_reserve\n'+LEDGER.map(o=>[o.d,o.type,o.usd,o.btc,o.res].join(',')).join('\n')+'\n';
+  const csv=toCSV(LEDGER);
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download=`satscope-${today()}.csv`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
 });
 $('impBtn').addEventListener('click',()=>$('impFile').click());
 $('impFile').addEventListener('change',async e=>{
   const f=e.target.files[0];e.target.value='';if(!f)return;
   try{
-    const lines=(await f.text()).trim().split(/\r?\n/);
-    if(!/^date,type,usd,btc/.test(lines[0]))throw 0;
-    const key=o=>[o.d,o.type,o.usd,o.btc,o.res].join('|'),have=new Set(LEDGER.map(key));let n=0;
-    for(const l of lines.slice(1)){
-      const [d,type,u,b,r]=l.split(',');const o={id:newId(),d,type,usd:+u,btc:+b||0,res:+r||0};
-      if(!okOp(o))throw 0;if(!have.has(key(o))){LEDGER.push(o);have.add(key(o));n++}
-    }
-    saveLedger();$('pfMsg').textContent=T().impOk(n);
+    const {list,added}=mergeOps(LEDGER,parseCSV(await f.text()));
+    LEDGER=list;saveLedger();$('pfMsg').textContent=T().impOk(added);
   }catch(_){$('pfMsg').textContent=T().impErr}
 });
 function renderBt(c){

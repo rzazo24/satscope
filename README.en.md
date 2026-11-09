@@ -65,13 +65,22 @@ python3 -m http.server 8000
 
 ## Tests
 
-The logic (Wilder RSI, indicators, score, backtest and snapshot) has tests that load straight from `index.html`:
+No dependencies: just Node 22 or later.
 
 ```bash
 node --test
 ```
 
-They also run on GitHub Actions on every push.
+| File | What it checks |
+|---|---|
+| `tests/logic.test.mjs` | Wilder RSI (against a reference example), indicator scales, score, backtest and snapshot |
+| `tests/data.test.mjs` | Data loading: Binance paging, closed weeks only, 200-week MA, drawdown, Bitstamp and Fear & Greed fallbacks |
+| `tests/ledger.test.mjs` | Trade log: portfolio, weekly action, skipped weeks, CSV and settings migration |
+| `tests/i18n.test.mjs` | That Spanish and English have the same texts and none is left untranslated |
+| `tests/files.test.mjs` | That everything the page, manifest and service worker use exists and gets published |
+| `tests/e2e.test.mjs` | The real page in Chrome with simulated data: loading, fallbacks, trade log, language, theme and migration. Skipped if Chrome isn't found (or set `CHROME_PATH`) |
+
+The tests load the code straight from `index.html`, so they check exactly what gets published. They run on GitHub Actions on every push.
 
 ## Deployment
 
