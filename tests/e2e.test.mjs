@@ -376,3 +376,14 @@ test('WBTC: dirección inválida, nodos caídos y vuelta a BTC', { skip }, async
   } finally { await p.close(); }
 });
 
+test('Los botones de la cartera tienen la misma altura (también el enlace del recordatorio)', { skip }, async () => {
+  for (const width of [390, 800]) {
+    const p = await open({ width, storage: { seenHelp: '1' } });
+    try {
+      const h = await p.ev("[...document.querySelectorAll('#icsBtn,#expBtn,#impBtn')].map(b=>Math.round(b.getBoundingClientRect().height))");
+      assert.equal(new Set(h).size, 1, `alturas distintas a ${width} px: ${h}`);
+      assert.equal(await p.ev("getComputedStyle(document.getElementById('icsBtn')).textDecorationLine"), 'none');
+    } finally { await p.close(); }
+  }
+});
+
