@@ -283,3 +283,30 @@ test('El recuadro de foco solo se ve con el teclado, no tras tocar o hacer clic'
   } finally { await p.close(); }
 });
 
+test('Restablecer la estrategia a los valores por defecto y deshacerlo', { skip }, async () => {
+  const p = await open({ storage: { seenHelp: '1', cfg: JSON.stringify({ base: 25, sellAt: 90, wF: 50 }), lang: 'es', theme: 'dark' } });
+  const val = id => p.ev(`document.getElementById('${id}').value`);
+  try {
+    assert.equal(await val('base'), '25');
+    assert.equal(await p.ev("document.getElementById('resetBtn').disabled"), false);
+    await p.ev("document.getElementById('resetBtn').click()");
+    assert.equal(await val('base'), String(DEF.base));
+    assert.equal(await val('sellAt'), String(DEF.sellAt));
+    assert.equal(await val('wF'), String(DEF.wF));
+    assert.equal(await p.ev("localStorage.getItem('cfg')"), '{}');
+    assert.equal(await p.ev("document.getElementById('resetBtn').disabled"), true, 'ya está todo por defecto');
+    assert.match(await p.ev("document.getElementById('resetMsg').textContent"), /Ajustes restablecidos/);
+    const exp = await expected({}); // acción con los valores por defecto y los mismos datos
+    assert.equal(await p.ev("document.getElementById('pill').textContent"), exp.I18N.es[PILL[exp.kind]], 'la acción se recalcula');
+    // No toca el idioma ni el tema
+    assert.equal(await p.ev("localStorage.getItem('lang')"), 'es');
+    assert.equal(await p.ev("localStorage.getItem('theme')"), 'dark');
+    // Deshacer devuelve los ajustes anteriores
+    await p.ev("document.getElementById('resetUndo').click()");
+    assert.equal(await val('base'), '25');
+    assert.deepEqual(JSON.parse(await p.ev("localStorage.getItem('cfg')")), { base: 25, sellAt: 90, wF: 50 });
+    assert.equal(await p.ev("document.getElementById('resetMsg').textContent"), '');
+    assert.deepEqual(p.errors, []);
+  } finally { await p.close(); }
+});
+

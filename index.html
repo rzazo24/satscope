@@ -106,6 +106,7 @@ dialog.help::backdrop{background:rgba(0,0,0,.45)}
 .toc ul{list-style:none;padding:0;margin:12px 0 0;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:2px 16px}
 .toc a{display:block;padding:4px 0;text-decoration:none}
 .btn{font:inherit;font-size:.85rem;font-weight:600;padding:6px 12px;min-height:34px;border-radius:6px;border:1px solid var(--line);background:var(--panel);color:var(--fg);cursor:pointer}
+.btn:disabled{opacity:.5;cursor:default}
 .btn.pri{background:var(--fg);color:var(--bg);border-color:var(--fg)}
 .btn:focus-visible,.lnk:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .lnk{font:inherit;font-size:.85rem;border:0;background:none;color:var(--accent);text-decoration:underline;cursor:pointer;padding:4px}
@@ -244,7 +245,7 @@ try{const t=localStorage.getItem('theme');if(t==='light'||t==='dark')document.do
 
   <h3 id="h-ajustes">Ajustes</h3>
   <p>En «Ajustes de la estrategia» puedes cambiar la aportación base, los pesos de los indicadores, el multiplicador de cada tramo, el umbral y el porcentaje de venta, y desde qué puntuación se usa la reserva. Todo se recalcula al instante, también el backtest y esta ayuda.</p>
-  <p>Solo se guardan los valores que cambias. «Mostrar equivalencia en euros» solo cambia lo que ves: la estrategia y el registro van en dólares.</p>
+  <p>Solo se guardan los valores que cambias. Con «Restablecer valores por defecto» vuelves a los de la app (tienes unos segundos para deshacerlo); no toca el idioma, el tema ni tu registro. «Mostrar equivalencia en euros» solo cambia lo que ves: la estrategia y el registro van en dólares.</p>
 
   <h3 id="h-datos">De dónde salen los datos</h3>
   <ul>
@@ -361,7 +362,7 @@ try{const t=localStorage.getItem('theme');if(t==='light'||t==='dark')document.do
 
   <h3 id="h-ajustes">Settings</h3>
   <p>Under "Strategy settings" you can change the base amount, the indicator weights, each band's multiplier, the sell threshold and percentage, and the score below which the reserve is used. Everything updates instantly, including the backtest and this help.</p>
-  <p>Only the values you change are saved. "Show euro equivalent" only changes what you see: the strategy and the log stay in dollars.</p>
+  <p>Only the values you change are saved. "Reset to defaults" brings back the app's values (you get a few seconds to undo it); it doesn't touch the language, theme or your trade log. "Show euro equivalent" only changes what you see: the strategy and the log stay in dollars.</p>
 
   <h3 id="h-datos">Where the data comes from</h3>
   <ul>
@@ -508,6 +509,10 @@ try{const t=localStorage.getItem('theme');if(t==='light'||t==='dark')document.do
       </div>
       <label style="display:flex;align-items:center;gap:8px;margin-top:12px;font-size:.85rem"><input type="checkbox" id="showEur" style="width:auto"> <span data-i18n="lEur"></span></label>
       <p class="note" style="margin-top:10px" data-i18n="saved"></p>
+      <div class="row" style="margin-top:8px">
+        <button type="button" class="btn" id="resetBtn" data-i18n="reset"></button>
+        <span class="note" id="resetMsg" role="status"></span>
+      </div>
     </details>
   </section>
   <p class="note" data-i18n="disclaimer"></p>
@@ -532,7 +537,7 @@ const clamp=v=>Math.max(0,Math.min(100,v));
 // Idioma
 const I18N={
   es:{loc:'es-ES',desc:'Panel de DCA dinámico para Bitcoin',loading:'Cargando…',live:(s,f)=>`Datos en directo · ${s}${f==='live'?' + alternative.me':f==='snap'?' · Fear & Greed no disponible: se usan los valores guardados':' · Fear & Greed no disponible: la puntuación se calcula sin él'}`,snap:d=>`Sin conexión a las APIs · datos guardados del ${d}`,
-    theme:'Tema',help:'Ayuda',helpT:'Ayuda de SatScope',close:'Cerrar',helpOn:'Ayuda sobre esta sección',welcome:'¿Primera vez aquí? Te explico en un minuto cómo funciona y qué hacer cada semana.',welcomeGo:'Ver la ayuda',install:'Instalar app',updMsg:'Hay una nueva versión de SatScope.',updGo:'Actualizar',updLater:'Más tarde',tAuto:'Auto',tLight:'Claro',tDark:'Oscuro',calc:'Calculando la acción de esta semana…',tick0:'0 miedo',tick100:'100 euforia',
+    theme:'Tema',reset:'Restablecer valores por defecto',resetDone:'Ajustes restablecidos.',help:'Ayuda',helpT:'Ayuda de SatScope',close:'Cerrar',helpOn:'Ayuda sobre esta sección',welcome:'¿Primera vez aquí? Te explico en un minuto cómo funciona y qué hacer cada semana.',welcomeGo:'Ver la ayuda',install:'Instalar app',updMsg:'Hay una nueva versión de SatScope.',updGo:'Actualizar',updLater:'Más tarde',tAuto:'Auto',tLight:'Claro',tDark:'Oscuro',calc:'Calculando la acción de esta semana…',tick0:'0 miedo',tick100:'100 euforia',
     inds:'Indicadores',hist:'Puntuación de las últimas 104 semanas',histNote:'Línea discontinua: umbral de venta. Zona verde: tramos con compra.',
     settings:'Ajustes de la estrategia',lBase:'Aportación base ($)',lWF:'Peso Fear & Greed',lWD:'Peso caída desde máximo',lWW:'Peso MA200 semanas',lWR:'Peso RSI semanal',
     lSellAt:'Vender desde puntuación',lSellPct:'% de BTC a vender',saved:'Los ajustes se guardan en este navegador.',
@@ -563,7 +568,7 @@ const I18N={
     hSell:'Lo que cobres pasa a tu reserva de ventas y se usará para comprar más en las semanas de miedo extremo.',
     iF:'Fear & Greed',iD:'Caída desde máximo',iW:'Precio / MA200 semanas',iR:'RSI semanal',weight:'peso',adds:'Aporta'},
   en:{loc:'en-US',desc:'Dynamic DCA dashboard for Bitcoin',loading:'Loading…',live:(s,f)=>`Live data · ${s}${f==='live'?' + alternative.me':f==='snap'?' · Fear & Greed unavailable: using saved values':' · Fear & Greed unavailable: the score is worked out without it'}`,snap:d=>`APIs unreachable · saved data from ${d}`,
-    theme:'Theme',help:'Help',helpT:'SatScope help',close:'Close',helpOn:'Help on this section',welcome:'First time here? Here\'s a one-minute guide to how it works and what to do each week.',welcomeGo:'Read the help',install:'Install app',updMsg:'A new version of SatScope is available.',updGo:'Update',updLater:'Later',tAuto:'Auto',tLight:'Light',tDark:'Dark',calc:'Working out this week’s action…',tick0:'0 fear',tick100:'100 greed',
+    theme:'Theme',reset:'Reset to defaults',resetDone:'Settings reset.',help:'Help',helpT:'SatScope help',close:'Close',helpOn:'Help on this section',welcome:'First time here? Here\'s a one-minute guide to how it works and what to do each week.',welcomeGo:'Read the help',install:'Install app',updMsg:'A new version of SatScope is available.',updGo:'Update',updLater:'Later',tAuto:'Auto',tLight:'Light',tDark:'Dark',calc:'Working out this week’s action…',tick0:'0 fear',tick100:'100 greed',
     inds:'Indicators',hist:'Score over the last 104 weeks',histNote:'Dashed line: sell threshold. Green zone: bands that buy.',
     settings:'Strategy settings',lBase:'Base amount ($)',lWF:'Fear & Greed weight',lWD:'Drawdown from ATH weight',lWW:'200-week MA weight',lWR:'Weekly RSI weight',
     lSellAt:'Sell from score',lSellPct:'% of BTC to sell',saved:'Settings are saved in this browser.',
@@ -854,7 +859,9 @@ $('welcomeX').addEventListener('click',()=>{$('welcome').hidden=true;try{localSt
 try{$('welcome').hidden=!!localStorage.getItem('seenHelp')}catch(e){}
 function render(){
   if(!ROWS)return;const c=cfg();
-  try{const d={};for(const k of IDS)if(c[k]!==DEF[k])d[k]=c[k];localStorage.setItem('cfg',JSON.stringify(d))}catch(e){}
+  const changed={};for(const k of IDS)if(c[k]!==DEF[k])changed[k]=c[k];
+  try{localStorage.setItem('cfg',JSON.stringify(changed))}catch(e){}
+  $('resetBtn').disabled=!Object.keys(changed).length;
   const r=ROWS.at(-1),sc=score(r,c),p=parts(r);
   const band=Math.min(4,Math.floor(sc/20)),mult=c['m'+band],sell=sc>=c.sellAt;
   $('score').innerHTML=`${fmt(sc)}<small>/100</small>`;
@@ -990,6 +997,17 @@ function draw(s,c){
 }
 for(const k of IDS)$(k).addEventListener('input',render);
 for(const k of IDS)$(k).addEventListener('input',()=>{if($('help').open)fillHelp()});
+// Restablecer la estrategia: vuelve a los valores por defecto y permite deshacerlo durante unos segundos
+let resetTimer=null;
+function setCfg(v){for(const k of IDS)$(k).value=v[k];render();if($('help').open)fillHelp()}
+$('resetBtn').addEventListener('click',()=>{
+  const before=cfg();setCfg(DEF);
+  const msg=$('resetMsg'),t=T();
+  msg.innerHTML=`${t.resetDone} <button type="button" class="lnk" id="resetUndo">${t.undo}</button>`;
+  $('resetUndo').onclick=()=>{setCfg(before);msg.textContent='';clearTimeout(resetTimer)};
+  clearTimeout(resetTimer);resetTimer=setTimeout(()=>msg.textContent='',8000);
+});
+for(const k of IDS)$(k).addEventListener('input',()=>{clearTimeout(resetTimer);$('resetMsg').textContent=''});
 addEventListener('resize',render);
 let savedTheme=null;try{savedTheme=localStorage.getItem('theme')}catch(e){}
 applyTheme(savedTheme);applyLang();
