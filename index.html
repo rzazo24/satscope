@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>SatScope</title>
+<meta name="description" content="Panel de DCA dinámico para Bitcoin">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%E2%82%BF%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: panel de una columna — acción de la semana arriba, indicadores, histórico de puntuación, ajustes plegados */
+:root{
+  --bg:#f6f5f1;--panel:#ffffff;--fg:#1d1c19;--muted:#6d6a60;--line:#e2dfd5;
+  --accent:#d9820b;--buy:#2f7d4f;--hold:#8a8577;--sell:#b23b2e;
+  --sans:"IBM Plex Sans",system-ui,sans-serif;--mono:"IBM Plex Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#15140f;--panel:#1f1d17;--fg:#ece8dc;--muted:#9d998c;--line:#34312a;--accent:#f0a030;--buy:#5cbf84;--hold:#a19c8e;--sell:#e2705f;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#15140f;--panel:#1f1d17;--fg:#ece8dc;--muted:#9d998c;--line:#34312a;--accent:#f0a030;--buy:#5cbf84;--hold:#a19c8e;--sell:#e2705f;color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font-family:var(--sans);line-height:1.5}
+.wrap{max-width:760px;margin:0 auto;padding-block:20px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:16px}
+h1{font-size:1.3rem;margin:0}
+h2{font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0 0 10px}
+section{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:16px;min-width:0}
+.top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.src{font-size:.75rem;color:var(--muted);font-family:var(--mono)}
+.hero{display:grid;grid-template-columns:auto 1fr;gap:20px;align-items:center}
+.score{font-family:var(--mono);font-size:4rem;font-weight:600;line-height:1;font-variant-numeric:tabular-nums}
+.score small{font-size:1rem;color:var(--muted);font-weight:400}
+.pill{display:inline-block;padding:3px 10px;border-radius:999px;font-weight:600;font-size:.85rem;color:#fff}
+.action{font-size:1.15rem;font-weight:600;margin-top:6px}
+.sub{color:var(--muted);font-size:.85rem}
+.bar{position:relative;height:10px;border-radius:5px;background:linear-gradient(90deg,var(--buy),var(--hold) 50%,var(--sell));margin:18px 0 4px}
+.bar i{position:absolute;top:-5px;width:4px;height:20px;background:var(--fg);border-radius:2px;transform:translateX(-2px)}
+.ticks{display:flex;justify-content:space-between;font-family:var(--mono);font-size:.7rem;color:var(--muted)}
+.inds{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}
+.ind{border:1px solid var(--line);border-radius:6px;padding:10px;display:grid;gap:4px}
+.ind .n{font-size:.78rem;color:var(--muted)}
+.ind .v{font-family:var(--mono);font-size:1.05rem;font-weight:600}
+.mini{height:6px;border-radius:3px;background:var(--line);overflow:hidden}
+.mini b{display:block;height:100%;background:var(--accent)}
+canvas{width:100%;height:180px;display:block}
+details summary{cursor:pointer;font-weight:600}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:12px}
+label{display:grid;gap:4px;font-size:.8rem}
+input{font:inherit;padding:6px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--fg);width:100%;box-sizing:border-box}
+input:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.note{font-size:.75rem;color:var(--muted)}
+@media (max-width:420px){.hero{grid-template-columns:1fr}.score{font-size:3.2rem}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top"><h1>SatScope</h1><span class="src" id="src">Cargando…</span></div>
+
+  <section>
+    <div class="hero">
+      <div class="score" id="score">–<small>/100</small></div>
+      <div>
+        <span class="pill" id="pill">–</span>
+        <div class="action" id="action">Calculando la acción de esta semana…</div>
+        <div class="sub" id="price"></div>
+      </div>
+    </div>
+    <div class="bar"><i id="mark" style="left:50%"></i></div>
+    <div class="ticks"><span>0 miedo</span><span>20</span><span>40</span><span>60</span><span>80</span><span>100 euforia</span></div>
+  </section>
+
+  <section>
+    <h2>Indicadores</h2>
+    <div class="inds" id="inds"></div>
+  </section>
+
+  <section>
+    <h2>Puntuación de las últimas 104 semanas</h2>
+    <canvas id="chart"></canvas>
+    <p class="note">Línea discontinua: umbral de venta. Zona verde: tramos con compra.</p>
+  </section>
+
+  <section>
+    <details>
+      <summary>Ajustes de la estrategia</summary>
+      <div class="grid2">
+        <label>Aportación base ($)<input type="number" id="base" value="5" min="0" step="0.5"></label>
+        <label>Peso Fear &amp; Greed<input type="number" id="wF" value="30"></label>
+        <label>Peso caída desde máximo<input type="number" id="wD" value="40"></label>
+        <label>Peso MA200 semanas<input type="number" id="wW" value="15"></label>
+        <label>Peso RSI semanal<input type="number" id="wR" value="15"></label>
+        <label>Mult. 0–20<input type="number" id="m0" value="5" step="0.25"></label>
+        <label>Mult. 20–40<input type="number" id="m1" value="1" step="0.25"></label>
+        <label>Mult. 40–60<input type="number" id="m2" value="0" step="0.25"></label>
+        <label>Mult. 60–80<input type="number" id="m3" value="0" step="0.25"></label>
+        <label>Mult. 80–100<input type="number" id="m4" value="0" step="0.25"></label>
+        <label>Vender desde puntuación<input type="number" id="sellAt" value="75"></label>
+        <label>% de BTC a vender<input type="number" id="sellPct" value="5"></label>
+      </div>
+      <p class="note" style="margin-top:10px">Los ajustes se guardan en este navegador.</p>
+    </details>
+  </section>
+  <p class="note">Herramienta de análisis basada en datos históricos. No es asesoramiento financiero.</p>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const IDS=['base','wF','wD','wW','wR','m0','m1','m2','m3','m4','sellAt','sellPct'];
+try{const s=JSON.parse(localStorage.getItem('dcaCfg')||'{}');for(const k of IDS)if(s[k]!=null)$(k).value=s[k]}catch(e){}
+const cfg=()=>Object.fromEntries(IDS.map(k=>[k,+$(k).value]));
+const clamp=v=>Math.max(0,Math.min(100,v));
+const fmt=(v,d=0)=>v.toLocaleString('es-ES',{maximumFractionDigits:d,minimumFractionDigits:d});
+
+// Instantánea semanal integrada (Bitstamp + alternative.me), por si no hay conexión a las APIs
+const SNAP_START='2018-02-05',SNAP_END='2026-11-09';
+const RAW="6874 0.87 4.14 51 11;8899 1.10 5.23 53 42;11173 1.34 6.39 57 67;10325 1.20 5.75 53 37;11419 1.29 6.17 53 55;9121 1.01 4.81 46 41;8597 0.94 4.44 36 29;8150 0.88 4.13 29 31;7053 0.75 3.51 34 11;6780 0.71 3.32 34 21;8048 0.83 3.88 33 ;8947 0.91 4.23 39 28;9242 0.93 4.28 46 59;9360 0.93 4.25 45 56;8674 0.85 3.87 56 40;8392 0.82 3.68 48 41;7113 0.69 3.07 32 22;7488 0.73 3.18 37 41;6881 0.67 2.88 28 15;6708 0.66 2.78 36 27;6254 0.63 2.56 36 16;6613 0.69 2.67 41 27;6667 0.72 2.66 47 39;6721 0.75 2.65 50 36;7720 0.88 3.01 48 44;8160 0.96 3.13 44 53;6936 0.84 2.62 34 25;6253 0.77 2.34 30 21;6261 0.79 2.32 33 26;6905 0.87 2.53 40 18;7259 0.93 2.62 51 19;6302 0.82 2.25 42 15;6255 0.83 2.21 45 25;6582 0.89 2.30 49 43;6571 0.90 2.27 53 35;6605 0.91 2.26 50 26;6442 0.89 2.18 48 20;6406 0.89 2.15 47 27;6267 0.87 2.08 36 34;6403 0.90 2.10 32 42;6318 0.90 2.06 41 52;4735 0.69 1.53 33 28;3727 0.56 1.20 27 17;3834 0.59 1.22 19 17;3408 0.53 1.08 12 19;3497 0.56 1.10 17 17;4036 0.66 1.27 26 25;3693 0.62 1.15 19 26;4005 0.68 1.24 24 39;3664 0.63 1.13 22 16;3532 0.62 1.08 22 30;3430 0.61 1.05 22 35;3411 0.62 1.04 23 27;3589 0.67 1.09 23 46;3870 0.74 1.16 28 63;3821 0.75 1.14 38 47;3699 0.74 1.10 50 36;3849 0.78 1.14 50 56;3970 0.82 1.17 60 56;3911 0.83 1.15 58 46;4136 0.89 1.20 52 62;5288 1.15 1.53 75 65;5027 1.11 1.44 66 60;5387 1.20 1.54 77 61;5149 1.16 1.46 74 42;5685 1.29 1.60 80 57;7810 1.77 2.18 88 78;8006 1.79 2.21 88 73;8771 1.94 2.39 89 70;8104 1.76 2.19 81 66;8021 1.70 2.14 81 46;9333 1.91 2.46 84 84;11030 2.16 2.87 86 80;10577 1.96 2.72 83 65;12286 2.17 3.11 85 74;10850 1.83 2.71 73 16;10329 1.68 2.55 72 42;9495 1.49 2.31 66 19;11800 1.79 2.84 73 64;11385 1.65 2.70 70 48;10927 1.53 2.56 62 30;10361 1.41 2.40 59 41;10384 1.37 2.38 56 28;10307 1.32 2.34 59 41;10270 1.28 2.30 59 38;9682 1.17 2.15 52 41;8298 0.99 1.82 37 27;8206 0.96 1.79 39 27;8363 0.96 1.81 28 37;8214 0.93 1.76 33 37;9216 1.03 1.96 43 52;9411 1.03 1.98 49 49;8720 0.94 1.82 24 40;8171 0.87 1.69 23 38;7122 0.76 1.46 21 17;7310 0.78 1.49 25 28;7341 0.78 1.49 25 32;6882 0.74 1.38 24 24;7316 0.79 1.46 29 33;7220 0.78 1.43 31 40;7763 0.84 1.53 45 41;8105 0.89 1.58 49 49;8625 0.96 1.67 52 48;8895 1.00 1.71 55 50;9288 1.05 1.77 51 59;9850 1.11 1.86 54 57;9697 1.09 1.82 59 49;9653 1.10 1.79 65 46;8917 1.02 1.64 69 38;7936 0.92 1.45 56 17;5033 0.59 0.92 36 9;6494 0.77 1.18 48 10;6408 0.78 1.15 45 10;7352 0.90 1.32 51 12;6864 0.85 1.22 45 11;6841 0.85 1.21 43 15;7786 0.98 1.37 46 28;8883 1.11 1.55 50 44;8572 1.07 1.49 47 40;9722 1.21 1.67 49 50;8904 1.11 1.52 47 41;10204 1.26 1.73 52 50;9783 1.20 1.65 53 53;9435 1.15 1.58 56 37;9683 1.17 1.61 74 38;9189 1.10 1.51 66 41;9348 1.11 1.53 67 40;9233 1.09 1.50 62 43;9162 1.07 1.48 65 44;11046 1.28 1.77 72 58;11236 1.29 1.78 70 75;11895 1.35 1.87 68 78;12298 1.38 1.92 73 83;11762 1.31 1.82 63 78;11655 1.29 1.79 70 75;10377 1.14 1.58 51 41;10675 1.17 1.61 57 39;10411 1.13 1.56 57 48;10689 1.15 1.59 57 43;10795 1.14 1.59 63 42;11536 1.20 1.69 66 52;11764 1.20 1.71 68 55;13067 1.30 1.88 74 75;13564 1.32 1.94 68 71;15332 1.46 2.17 74 90;16725 1.55 2.34 76 90;18383 1.65 2.54 79 90;19700 1.72 2.69 85 88;19174 1.63 2.59 82 94;19274 1.59 2.57 92 95;22732 1.81 2.99 94 92;27038 2.06 3.50 97 92;32006 2.31 4.07 98 94;35456 2.39 4.40 98 90;36617 2.32 4.45 98 79;32261 1.94 3.85 84 74;33533 1.92 3.92 84 77;46416 2.51 5.31 89 83;47943 2.42 5.35 88 93;54174 2.55 5.87 90 94;49629 2.20 5.25 81 38;52428 2.20 5.40 82 81;55644 2.19 5.58 84 76;54071 2.00 5.27 81 70;57600 2.01 5.48 81 72;59125 1.95 5.48 80 71;59832 1.87 5.40 79 74;55695 1.65 4.90 70 74;54073 1.54 4.66 67 27;57222 1.56 4.82 76 61;55881 1.46 4.60 73 72;43593 1.10 3.52 47 27;38840 0.96 3.09 41 10;37341 0.91 2.93 32 18;33583 0.80 2.60 33 15;40533 0.95 3.10 38 28;31634 0.73 2.39 28 23;34487 0.79 2.58 33 25;33704 0.76 2.49 28 29;33105 0.74 2.42 26 25;30829 0.69 2.23 24 24;37291 0.84 2.67 34 26;39166 0.88 2.77 37 48;46293 1.03 3.23 41 65;45931 1.01 3.16 42 72;49561 1.08 3.36 56 79;47003 1.02 3.14 58 73;52708 1.14 3.47 64 79;44974 0.98 2.93 60 44;43036 0.94 2.76 52 50;42190 0.93 2.68 62 26;49242 1.09 3.09 65 54;57485 1.28 3.57 71 71;62035 1.37 3.80 74 78;63101 1.39 3.81 77 72;60923 1.35 3.63 72 74;67559 1.48 3.97 74 75;63606 1.38 3.68 65 72;56294 1.22 3.21 58 50;57845 1.26 3.26 57 33;50555 1.09 2.81 53 16;46725 1.00 2.57 45 28;46915 0.99 2.56 52 25;50718 1.06 2.73 57 40;46440 0.97 2.48 53 29;41845 0.87 2.21 44 23;42255 0.87 2.21 35 22;36725 0.75 1.91 26 13;38492 0.79 1.99 27 20;43869 0.89 2.24 35 45;42540 0.86 2.16 26 46;37077 0.75 1.86 25 25;43179 0.88 2.16 37 20;38016 0.78 1.88 32 23;39666 0.81 1.95 39 23;41043 0.85 2.00 44 30;47152 0.98 2.28 50 60;46598 0.96 2.23 46 52;39525 0.82 1.88 43 32;40815 0.85 1.92 49 24;40441 0.85 1.89 48 23;38521 0.82 1.79 52 28;30082 0.65 1.39 42 11;29832 0.66 1.37 35 14;29082 0.66 1.33 36 10;31731 0.74 1.44 44 10;31351 0.75 1.41 34 13;22450 0.55 1.01 31 11;20555 0.52 0.92 27 9;20700 0.54 0.92 25 12;20210 0.54 0.90 12 14;19950 0.55 0.88 12 22;22435 0.63 0.99 22 20;21307 0.62 0.94 18 30;23283 0.69 1.02 23 33;23822 0.72 1.04 26 30;24110 0.73 1.05 37 45;21411 0.66 0.93 33 29;20302 0.64 0.88 32 24;19794 0.64 0.85 24 23;22401 0.74 0.96 32 25;19538 0.67 0.84 42 21;19226 0.67 0.82 46 21;19636 0.70 0.84 47 24;19131 0.70 0.81 47 22;19547 0.75 0.83 49 20;19332 0.76 0.82 40 22;20498 0.83 0.86 47 31;20590 0.86 0.86 40 33;16589 0.72 0.69 29 24;15766 0.71 0.66 26 21;16210 0.74 0.67 33 28;16968 0.80 0.70 39 26;17209 0.82 0.71 41 27;16446 0.80 0.68 27 29;16917 0.85 0.70 38 28;16673 0.85 0.68 38 27;17179 0.88 0.70 38 25;21189 1.09 0.86 57 45;22922 1.17 0.93 61 50;22831 1.16 0.92 61 61;22763 1.15 0.92 58 56;21790 1.11 0.87 54 48;24843 1.26 0.99 79 58;23493 1.19 0.94 76 50;22407 1.14 0.89 70 48;24209 1.23 0.96 72 49;27815 1.39 1.10 77 66;27142 1.34 1.07 77 64;27816 1.36 1.09 77 63;29652 1.43 1.16 80 62;29448 1.39 1.14 79 69;27512 1.28 1.06 67 53;28079 1.29 1.08 64 63;27690 1.25 1.06 63 60;27166 1.21 1.04 62 50;26856 1.19 1.03 64 49;27749 1.21 1.06 59 52;25739 1.11 0.98 57 53;25906 1.10 0.98 61 47;26842 1.12 1.01 59 47;30274 1.24 1.14 58 55;31158 1.25 1.17 64 62;30421 1.20 1.14 59 56;30154 1.17 1.12 52 54;29177 1.11 1.08 49 55;29231 1.10 1.08 57 50;29181 1.08 1.07 55 49;29408 1.08 1.08 57 50;26125 0.96 0.95 46 38;26103 0.95 0.95 47 39;25819 0.94 0.94 43 40;25155 0.91 0.91 48 40;26770 0.97 0.96 53 46;26297 0.94 0.94 48 47;27507 0.98 0.98 37 50;27594 0.98 0.98 32 50;28518 1.02 1.01 41 47;33074 1.18 1.17 60 53;34495 1.22 1.21 68 68;35042 1.23 1.23 69 74;36485 1.27 1.27 72 72;37480 1.29 1.30 73 69;37240 1.27 1.29 88 66;41985 1.41 1.44 91 74;41242 1.36 1.41 89 74;42650 1.38 1.45 93 65;43591 1.39 1.47 93 73;44187 1.38 1.48 95 65;46995 1.44 1.57 95 71;42493 1.28 1.41 79 52;39528 1.18 1.30 70 55;43305 1.28 1.42 69 55;42659 1.24 1.39 65 60;49937 1.43 1.62 73 70;51789 1.45 1.67 73 75;54524 1.49 1.74 74 72;68359 1.82 2.16 82 82;72118 1.84 2.26 81 82;67613 1.66 2.10 76 77;69898 1.66 2.15 76 75;69699 1.60 2.13 75 79;71613 1.59 2.17 76 76;63438 1.37 1.90 64 74;66855 1.40 1.99 71 73;63832 1.30 1.88 71 67;63164 1.26 1.85 68 71;62934 1.23 1.83 69 57;71401 1.36 2.06 69 70;69392 1.30 1.98 66 74;68801 1.26 1.95 63 73;69501 1.25 1.95 51 72;66475 1.17 1.85 43 71;60252 1.05 1.67 41 51;62829 1.08 1.73 41 53;56710 0.97 1.55 36 28;64769 1.09 1.76 44 52;67562 1.12 1.82 54 70;66780 1.10 1.79 50 74;54014 0.88 1.43 41 26;59362 0.95 1.57 47 25;59497 0.95 1.56 47 28;62852 0.99 1.64 42 55;59133 0.93 1.53 41 26;57059 0.89 1.47 40 26;58212 0.91 1.49 40 39;63325 0.99 1.61 47 50;63302 0.99 1.60 53 61;62212 0.98 1.57 49 50;66070 1.04 1.66 59 48;67340 1.06 1.68 53 72;69918 1.11 1.73 53 72;67818 1.07 1.67 51 70;88770 1.39 2.18 83 76;90512 1.39 2.21 82 83;93035 1.41 2.25 83 82;95859 1.43 2.30 82 80;97468 1.43 2.32 89 78;106073 1.53 2.51 94 83;94750 1.35 2.23 78 70;92628 1.30 2.17 73 65;102280 1.41 2.38 77 76;94505 1.28 2.19 70 61;102141 1.36 2.36 72 76;102090 1.33 2.34 71 71;101457 1.30 2.32 70 44;97469 1.23 2.22 68 43;95772 1.19 2.17 56 51;91554 1.12 2.06 51 49;86160 1.05 1.93 45 33;78561 0.94 1.76 38 20;84058 1.00 1.87 41 32;87512 1.03 1.94 37 45;82538 0.96 1.82 41 34;79127 0.91 1.74 40 23;84583 0.97 1.85 36 31;87505 0.99 1.90 44 39;95041 1.06 2.05 44 54;94725 1.05 2.03 44 52;102796 1.12 2.19 51 70;105622 1.14 2.23 56 74;109468 1.16 2.29 60 73;105905 1.12 2.20 61 64;110307 1.16 2.28 69 62;106829 1.12 2.20 74 61;105464 1.10 2.16 69 47;107179 1.11 2.18 68 66;108287 1.12 2.19 76 73;119879 1.23 2.40 85 74;117437 1.20 2.34 80 71;118051 1.20 2.33 79 75;115051 1.16 2.26 71 64;118712 1.19 2.32 73 70;116265 1.16 2.25 65 60;110136 1.09 2.13 55 47;109244 1.08 2.10 50 46;112098 1.10 2.14 57 51;115387 1.12 2.20 56 53;112741 1.09 2.13 57 45;114379 1.09 2.15 60 50;124728 1.18 2.33 67 71;115265 1.08 2.14 56 38;110580 1.02 2.04 41 29;114101 1.05 2.10 47 51;106548 0.97 1.95 41 42;105972 0.96 1.93 42 29;92102 0.83 1.67 31 14;88277 0.80 1.59 30 19;86291 0.79 1.55 32 24;90649 0.83 1.62 37 20;86412 0.80 1.54 32 16;88539 0.82 1.57 31 25;87119 0.81 1.53 32 24;93876 0.88 1.65 36 26;91195 0.86 1.59 25 27;92560 0.88 1.61 31 44;88247 0.84 1.53 31 20;78666 0.76 1.36 23 14;70094 0.69 1.21 22 14;68867 0.69 1.18 22 12;64630 0.66 1.11 26 5;68821 0.71 1.18 33 10;68453 0.72 1.17 34 8;74876 0.80 1.27 36 23;70883 0.77 1.20 36 8;66731 0.73 1.13 32 8;68857 0.77 1.16 35 13;74447 0.85 1.25 33 12;75870 0.88 1.27 37 29;77373 0.91 1.28 37 47;79844 0.96 1.32 42 40;81736 0.99 1.34 53 48;76949 0.94 1.26 58 28;77255 0.96 1.26 60 30;71314 0.90 1.16 57 29;63062 0.80 1.02 44 8;66282 0.85 1.07 48 20;63949 0.83 1.03 39 20;60164 0.80 0.96 39 12;64000 0.86 1.02 47 24;62257 0.84 0.99 43 28;65213 0.89 1.03 40 29;63698 0.88 1.01 36 30;63460 0.89 1.00 34 28;63911 0.91 1.00 31 30;64485 0.93 1.01 28 31;78986 1.14 1.23 52 73;78571 1.13 1.22 51 62;79090 1.13 1.22 59 71;78185 1.11 1.20 70 57;86587 1.23 1.32 74 70;83462 1.17 1.27 73 74;85756 1.20 1.30 81 70;81746 1.13 1.23 71 69;81840 1.13 1.23 74 59;80006 1.10 1.19 69 50;76674 1.05 1.14 66 37;73832 1.01 1.09 62 29";
+const DDS="64,54,42,46,40,52,55,58,63,65,58,53,52,51,55,56,63,61,64,65,67,66,65,65,60,57,64,67,67,64,62,67,67,66,66,66,66,67,67,67,67,75,81,80,82,82,79,81,79,81,82,82,82,81,80,80,81,80,79,80,78,72,74,72,73,70,59,58,54,58,58,51,43,45,36,43,46,51,39,41,43,46,46,46,46,50,57,57,56,57,52,51,55,57,63,62,62,64,62,62,60,58,55,54,52,49,49,50,54,59,74,66,67,62,64,64,59,54,55,49,54,47,49,51,50,52,51,52,52,42,41,38,36,39,39,46,44,46,44,44,40,39,32,29,20,13,4,0,3,2,5,0,3,13,10,21,18,0,1,6,14,9,9,12,6,3,2,12,15,10,12,31,39,41,47,36,50,46,47,48,51,41,38,27,28,22,26,17,29,32,34,23,10,2,4,8,0,6,17,14,25,31,31,25,31,38,37,46,43,35,37,45,36,44,41,39,30,31,41,40,40,43,55,56,57,53,54,67,70,69,70,70,67,68,66,65,64,68,70,71,67,71,72,71,72,71,71,70,70,75,77,76,75,75,76,75,75,75,69,66,66,66,68,63,65,67,64,59,60,59,56,56,59,58,59,60,60,59,62,62,60,55,54,55,55,57,57,57,56,61,61,62,63,60,61,59,59,58,51,49,48,46,45,45,38,39,37,35,35,30,37,41,36,37,26,23,19,0,0,8,4,5,2,13,9,13,14,14,2,5,6,5,9,18,14,22,11,8,9,26,19,19,14,19,22,20,13,13,15,10,8,4,7,0,1,6,3,4,0,11,13,4,11,4,4,4,8,10,14,19,26,21,18,22,25,20,18,10,11,3,1,2,5,1,4,6,4,3,0,2,2,4,1,6,11,11,9,6,9,7,0,8,11,9,15,15,26,29,31,27,31,29,30,25,27,26,29,37,44,45,48,45,45,40,43,46,45,40,39,38,36,34,38,38,43,49,47,49,52,49,50,48,49,49,49,48,37,37,37,37,31,33,31,34,34,36,39,41".split(',').map(Number);
+const SNAP=RAW.split(';').map((r,i,a)=>{const v=r.split(' ');return{t:i===a.length-1?SNAP_END:new Date(Date.parse(SNAP_START)+i*7*864e5).toISOString().slice(0,10),p:+v[0],w200:+v[2],rsi:+v[3],fng:v[4]===''?null:+v[4],dd:DDS[i]}});
+
+function parts(r){return{f:r.fng,d:clamp((1-r.dd/80)*100),w:clamp(Math.log(r.w200)/Math.log(5)*100),r:r.rsi}}
+function score(r,c){const p=parts(r);const L=[[p.f,c.wF],[p.d,c.wD],[p.w,c.wW],[p.r,c.wR]].filter(x=>x[0]!=null&&x[1]>0);let a=0,b=0;for(const[v,w]of L){a+=v*w;b+=w}return b?a/b:null}
+
+// Datos en directo: Binance (precio diario) + alternative.me (Fear & Greed)
+async function live(){
+  const k=[];let end=Date.now();
+  for(let n=0;n<3;n++){
+    const r=await fetch(`https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1d&limit=1000&endTime=${end}`);
+    if(!r.ok)throw new Error('binance');const a=await r.json();if(!a.length)break;
+    k.unshift(...a);end=a[0][0]-1;
+  }
+  const f=await (await fetch('https://api.alternative.me/fng/?limit=730')).json();
+  const fm=new Map(f.data.map(x=>[new Date(+x.timestamp*1000).toISOString().slice(0,10),+x.value]));
+  const t=k.map(x=>new Date(x[0]).toISOString().slice(0,10)),p=k.map(x=>+x[4]);
+  const n=p.length;const pre=[0];for(const v of p)pre.push(pre.at(-1)+v);
+  const ma=(i,len)=>i>=len-1?(pre[i+1]-pre[i+1-len])/len:null;
+  // Máximo histórico: Binance empieza en 2017; antes de esa fecha el ATH era menor, así que vale
+  const ath=[];let m=0;for(const v of p){m=Math.max(m,v);ath.push(m)}
+  const rows=[];
+  for(let i=n-1;i>=0&&rows.length<105;i-=7){
+    if(i<1400)break;
+    let g=0,l=0;for(let j=14;j>=1;j--){const d=p[i-7*(j-1)]-p[i-7*j];if(d>0)g+=d;else l-=d}
+    rows.unshift({t:t[i],p:p[i],w200:p[i]/ma(i,1400),rsi:l===0?100:100-100/(1+g/l),fng:fm.get(t[i])??null,dd:(1-p[i]/ath[i])*100});
+  }
+  if(rows.length<10)throw new Error('pocos datos');
+  if(rows.at(-1).fng==null)rows.at(-1).fng=+f.data[0].value;
+  return rows;
+}
+
+let ROWS=null;
+function render(){
+  if(!ROWS)return;const c=cfg();
+  try{localStorage.setItem('dcaCfg',JSON.stringify(c))}catch(e){}
+  const r=ROWS.at(-1),sc=score(r,c),p=parts(r);
+  const band=Math.min(4,Math.floor(sc/20)),mult=c['m'+band],sell=sc>=c.sellAt;
+  $('score').innerHTML=`${fmt(sc)}<small>/100</small>`;
+  $('mark').style.left=sc+'%';
+  const pill=$('pill');
+  if(sell){pill.textContent='Vender';pill.style.background='var(--sell)';$('action').textContent=`Vende el ${fmt(c.sellPct)} % de tu BTC esta semana`}
+  else if(mult>0){pill.textContent='Comprar';pill.style.background='var(--buy)';$('action').textContent=`Compra ${fmt(c.base*mult,2)} $ esta semana (×${fmt(mult,2)})`}
+  else{pill.textContent='Esperar';pill.style.background='var(--hold)';$('action').textContent='Esta semana no toca comprar ni vender'}
+  $('price').textContent=`BTC a ${fmt(r.p)} $ · datos del ${r.t}`;
+  const I=[['Fear & Greed',fmt(r.fng??0),p.f,c.wF],['Caída desde máximo','−'+fmt(r.dd)+' %',p.d,c.wD],['Precio / MA200 semanas',fmt(r.w200,2)+'×',p.w,c.wW],['RSI semanal',fmt(r.rsi),p.r,c.wR]];
+  $('inds').innerHTML=I.map(([n,v,s,w])=>`<div class="ind"><span class="n">${n} · peso ${fmt(w)}</span><span class="v">${v}</span><div class="mini"><b style="width:${s??0}%"></b></div><span class="n">Aporta ${s==null?'–':fmt(s)} / 100</span></div>`).join('');
+  draw(ROWS.slice(-104).map(x=>score(x,c)),c);
+}
+function draw(s,c){
+  const cv=$('chart'),dpr=devicePixelRatio||1,W=cv.clientWidth,H=cv.clientHeight;
+  cv.width=W*dpr;cv.height=H*dpr;const g=cv.getContext('2d');g.scale(dpr,dpr);
+  const cs=getComputedStyle(document.documentElement),col=n=>cs.getPropertyValue(n).trim();
+  const L=28,R=6,T=6,B=6,w=W-L-R,h=H-T-B,x=i=>L+i/(s.length-1)*w,y=v=>T+h-v/100*h;
+  let buyTop=0;for(let k=0;k<5;k++)if(c['m'+k]>0)buyTop=(k+1)*20;
+  g.globalAlpha=.12;g.fillStyle=col('--buy');g.fillRect(L,y(buyTop),w,y(0)-y(buyTop));g.globalAlpha=1;
+  g.font='10px IBM Plex Mono, monospace';g.fillStyle=col('--muted');g.strokeStyle=col('--line');g.lineWidth=1;g.textAlign='right';
+  for(const v of[0,50,100]){g.beginPath();g.moveTo(L,y(v));g.lineTo(L+w,y(v));g.stroke();g.fillText(v,L-4,y(v)+3)}
+  g.setLineDash([4,4]);g.strokeStyle=col('--sell');g.beginPath();g.moveTo(L,y(c.sellAt));g.lineTo(L+w,y(c.sellAt));g.stroke();g.setLineDash([]);
+  g.strokeStyle=col('--accent');g.lineWidth=2;g.beginPath();s.forEach((v,i)=>i?g.lineTo(x(i),y(v)):g.moveTo(x(i),y(v)));g.stroke();
+  g.fillStyle=col('--accent');g.beginPath();g.arc(x(s.length-1),y(s.at(-1)),4,0,7);g.fill();
+}
+for(const k of IDS)$(k).addEventListener('input',render);
+addEventListener('resize',render);
+(async()=>{
+  try{ROWS=await live();$('src').textContent='Datos en directo · Binance + alternative.me'}
+  catch(e){ROWS=SNAP;$('src').textContent=`Sin conexión a las APIs · datos guardados del ${SNAP_END}`}
+  render();
+})();
+</script>
+</body>
+</html>
