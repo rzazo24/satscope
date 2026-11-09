@@ -261,3 +261,25 @@ test('Ayuda: bienvenida, «?» de cada sección, valores actuales y cierre', { s
   try { assert.equal(await q.ev("document.getElementById('welcome').hidden"), true); } finally { await q.close(); }
 });
 
+test('El recuadro de foco solo se ve con el teclado, no tras tocar o hacer clic', { skip }, async () => {
+  const p = await open({ storage: { seenHelp: '1' } });
+  const outline = sel => p.ev(`getComputedStyle(document.querySelector(${JSON.stringify(sel)})).outlineStyle`);
+  try {
+    // Tras un toque, aunque el navegador marque el elemento como :focus-visible (como hace Safari en iPhone)
+    await p.ev("document.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}))");
+    await p.ev("document.querySelector('details:has(#base) summary').focus({focusVisible:true})");
+    assert.equal(await outline('details:has(#base) summary'), 'none');
+    await p.ev("document.querySelector('.qh[data-help=cartera]').focus({focusVisible:true})");
+    assert.equal(await outline('.qh[data-help=cartera]'), 'none');
+    // Con Tab se ve
+    await p.ev("document.dispatchEvent(new KeyboardEvent('keydown',{key:'Tab',bubbles:true}))");
+    await p.ev("document.querySelector('details:has(#base) summary').focus({focusVisible:true})");
+    assert.equal(await outline('details:has(#base) summary'), 'solid');
+    // Los campos de texto lo conservan aunque se toquen
+    await p.ev("document.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}))");
+    await p.ev("document.querySelector('details:has(#base)').open=true;document.getElementById('base').focus()");
+    assert.equal(await outline('#base'), 'solid');
+    assert.deepEqual(p.errors, []);
+  } finally { await p.close(); }
+});
+

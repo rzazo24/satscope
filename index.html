@@ -76,6 +76,9 @@ input:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outlin
 .seg[hidden]{display:none}
 .update{position:fixed;left:50%;bottom:max(16px,env(safe-area-inset-bottom,0px));transform:translateX(-50%);width:min(560px,calc(100% - 32px));box-sizing:border-box;display:flex;align-items:center;gap:10px;padding:10px 10px 10px 16px;background:var(--fg);color:var(--bg);border-radius:10px;box-shadow:0 6px 24px rgba(0,0,0,.25);z-index:10;font-size:.9rem}
 .update[hidden]{display:none}
+/* El recuadro de foco solo se ve al navegar con el teclado (Tab). Algunos navegadores, como Safari en iPhone,
+   lo muestran también tras un toque y se queda fijo; los campos de texto lo conservan siempre */
+:root:not(.kbd) :focus-visible:not(input,select,textarea){outline:none}
 .qh{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;margin-left:6px;padding:0;border:1px solid var(--line);border-radius:50%;background:none;color:var(--muted);font:600 .72rem var(--sans);cursor:pointer;vertical-align:middle;text-transform:none;letter-spacing:0}
 .qh:hover{color:var(--fg);border-color:var(--muted)}
 .qh:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
@@ -150,6 +153,9 @@ select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 <script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments)};</script>
 <script defer src="/_vercel/insights/script.js"></script>
 <script>
+// Modo teclado: Tab lo activa y cualquier toque o clic lo desactiva (ver la regla de :focus-visible)
+addEventListener('keydown',e=>{if(e.key==='Tab')document.documentElement.classList.add('kbd')},true);
+addEventListener('pointerdown',()=>document.documentElement.classList.remove('kbd'),true);
 // Aplica el tema guardado antes de pintar para evitar el parpadeo
 try{const t=localStorage.getItem('theme');if(t==='light'||t==='dark')document.documentElement.dataset.theme=t}catch(e){}
 </script>
