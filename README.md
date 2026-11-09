@@ -46,6 +46,7 @@ Pesos, multiplicadores, aportación y umbral de venta se pueden cambiar en «Aju
 ## Otras funciones
 
 - Español e inglés.
+- **Ayuda integrada** en español e inglés: botón «Ayuda», un «?» en cada sección que abre la explicación correspondiente y una bienvenida en la primera visita. Muestra los valores de tus ajustes.
 - **Registro de operaciones:** marca la acción de la semana como hecha o añade operaciones a mano. La app calcula tu BTC, lo aportado, el valor, la rentabilidad, el precio medio, la reserva de ventas y las semanas saltadas, y con ello te dice cuánto BTC vender exactamente y cuánta reserva usar. Se guarda solo en tu navegador; puedes exportarlo e importarlo en CSV.
 - **Backtest** desde el año que elijas: tu estrategia frente a un DCA fijo (invertido, BTC acumulado, ventas, valor, rentabilidad y precio medio).
 - Tema claro, oscuro o automático.

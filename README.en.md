@@ -46,6 +46,7 @@ You can change the weights, multipliers, base amount and sell threshold under "S
 ## Other features
 
 - Spanish and English.
+- **Built-in help** in Spanish and English: a "Help" button, a "?" on each section that opens the matching explanation, and a welcome note on the first visit. It shows the values from your settings.
 - **Trade log:** mark this week's action as done or add trades by hand. The app works out your BTC, money put in, value, return, average price, sales reserve and skipped weeks, and uses them to tell you exactly how much BTC to sell and how much reserve to use. It's only saved in your browser; you can export and import it as CSV.
 - **Backtest** from any year you choose: your strategy against fixed DCA (invested, BTC accumulated, sales, value, return and average price).
 - Light, dark or automatic theme.

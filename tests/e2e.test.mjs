@@ -226,3 +226,38 @@ test('Migra los ajustes de versiones anteriores', { skip }, async () => {
     assert.deepEqual(q.errors, []);
   } finally { await q.close(); }
 });
+
+test('Ayuda: bienvenida, «?» de cada sección, valores actuales y cierre', { skip }, async () => {
+  const p = await open({ storage: { cfg: JSON.stringify({ base: 20 }) } });
+  try {
+    assert.equal(await p.ev("document.getElementById('welcome').hidden"), false, 'bienvenida en la primera visita');
+    await p.ev("document.querySelector('#welcome [data-help]').click()");
+    assert.equal(await p.ev("document.getElementById('help').open"), true);
+    assert.equal(await p.ev("document.getElementById('welcome').hidden"), true);
+    assert.equal(await p.ev("localStorage.getItem('seenHelp')"), '1');
+    // Abre en la sección pedida: su título queda arriba del todo en la ventana
+    await p.ev("document.getElementById('helpClose').click()");
+    await p.ev("document.querySelector('.qh[data-help=cartera]').click()");
+    const top = await p.ev("document.getElementById('h-cartera').getBoundingClientRect().top - document.getElementById('helpBody').getBoundingClientRect().top");
+    assert.ok(top >= 0 && top < 40, `la sección no queda arriba (${top})`);
+    // Valores con los ajustes actuales (base 20 → tramo 0–20 = 100 $) y se actualizan al cambiarlos
+    assert.equal(await p.ev("document.querySelector('#helpBody [data-v=\"amt:0\"]').textContent"), '100,00 $');
+    assert.equal(await p.ev("document.querySelector('#helpBody [data-v=\"amt:4\"]').textContent"), 'Vender');
+    await p.ev("(()=>{const b=document.getElementById('base');b.value='10';b.dispatchEvent(new Event('input'))})()");
+    assert.equal(await p.ev("document.querySelector('#helpBody [data-v=\"amt:0\"]').textContent"), '50,00 $');
+    // El «?» dentro de los ajustes no abre ni cierra el desplegable
+    await p.ev("document.getElementById('helpClose').click()");
+    await p.ev("document.querySelector('.qh[data-help=ajustes]').click()");
+    assert.equal(await p.ev("document.querySelector('details:has(#base)').open"), false);
+    // En inglés, la ayuda también cambia
+    await p.ev("document.getElementById('helpClose').click()");
+    await p.ev("document.querySelector('#langSeg [data-lang=en]').click()");
+    await p.ev("document.querySelector('[data-help=\"\"]').click()");
+    assert.equal(await p.ev("document.querySelector('#helpBody h3').textContent"), 'What SatScope is');
+    assert.deepEqual(p.errors, []);
+  } finally { await p.close(); }
+  // En la siguiente visita ya no sale la bienvenida
+  const q = await open({ storage: { seenHelp: '1' } });
+  try { assert.equal(await q.ev("document.getElementById('welcome').hidden"), true); } finally { await q.close(); }
+});
+

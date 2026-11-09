@@ -47,3 +47,31 @@ test('Cada idioma usa su formato de números', () => {
   assert.equal(es.loc, 'es-ES');
   assert.equal(en.loc, 'en-US');
 });
+
+// Ayuda: dos plantillas, una por idioma, con la misma estructura
+const tpl = lang => HTML.match(new RegExp(`<template id="help-${lang}">([\\s\\S]*?)</template>`))[1];
+const ids = h => [...h.matchAll(/<h3 id="([\w-]+)"/g)].map(m => m[1]);
+
+test('La ayuda tiene las mismas secciones, valores y enlaces en los dos idiomas', () => {
+  const es = tpl('es'), en = tpl('en');
+  assert.deepEqual(ids(en), ids(es), 'secciones');
+  const vals = h => [...h.matchAll(/data-v="([\w:]+)"/g)].map(m => m[1]);
+  assert.deepEqual(vals(en), vals(es), 'valores rellenados con los ajustes');
+  const links = h => [...h.matchAll(/data-help="([\w-]*)"/g)].map(m => m[1]);
+  assert.deepEqual(links(en), links(es), 'enlaces internos');
+});
+
+test('Todos los enlaces de ayuda llevan a una sección que existe', () => {
+  const sections = new Set(ids(tpl('es')).map(i => i.replace(/^h-/, '')));
+  const used = [...HTML.matchAll(/data-help="([\w-]*)"/g)].map(m => m[1]).filter(Boolean);
+  assert.ok(used.length > 10);
+  for (const u of used) assert.ok(sections.has(u), `data-help="${u}" no tiene sección`);
+});
+
+test('Los valores de la ayuda usan ajustes que existen', () => {
+  const inputs = new Set([...HTML.matchAll(/<input type="number" id="(\w+)"/g)].map(m => m[1]));
+  for (const [, k, a] of tpl('es').matchAll(/data-v="(\w+):(\w+)"/g)) {
+    if (k === 'mul' || k === 'amt') assert.ok(inputs.has('m' + a), `tramo ${a}`);
+    else assert.ok(inputs.has(a), `${k}:${a}`);
+  }
+});

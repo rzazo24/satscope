@@ -76,6 +76,32 @@ input:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outlin
 .seg[hidden]{display:none}
 .update{position:fixed;left:50%;bottom:max(16px,env(safe-area-inset-bottom,0px));transform:translateX(-50%);width:min(560px,calc(100% - 32px));box-sizing:border-box;display:flex;align-items:center;gap:10px;padding:10px 10px 10px 16px;background:var(--fg);color:var(--bg);border-radius:10px;box-shadow:0 6px 24px rgba(0,0,0,.25);z-index:10;font-size:.9rem}
 .update[hidden]{display:none}
+.qh{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;margin-left:6px;padding:0;border:1px solid var(--line);border-radius:50%;background:none;color:var(--muted);font:600 .72rem var(--sans);cursor:pointer;vertical-align:middle;text-transform:none;letter-spacing:0}
+.qh:hover{color:var(--fg);border-color:var(--muted)}
+.qh:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.welcome{position:relative;display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--panel);border:1px solid var(--accent);border-radius:8px;padding:10px 44px 10px 14px;font-size:.9rem}
+.welcome[hidden]{display:none}
+.welcome span{flex:1 1 200px}
+.welcome .x{position:absolute;top:4px;right:4px;border:0;background:none;color:var(--muted);font-size:1.1rem;cursor:pointer;padding:4px 10px;min-height:36px}
+dialog.help{width:min(680px,calc(100% - 24px));max-height:min(88vh,900px);padding:0;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--fg);box-shadow:0 10px 40px rgba(0,0,0,.3)}
+dialog.help[open]{display:flex;flex-direction:column}
+dialog.help::backdrop{background:rgba(0,0,0,.45)}
+.help-head{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 10px 10px 16px;border-bottom:1px solid var(--line)}
+.help-head h2{margin:0;font-size:1rem;text-transform:none;letter-spacing:0;color:var(--fg)}
+.help-head button{border:0;background:none;color:var(--muted);font-size:1.3rem;line-height:1;cursor:pointer;padding:6px 10px;min-height:36px}
+.help-head button:focus-visible,.help a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.help-body{overflow:auto;padding:4px 16px 24px;font-size:.92rem;overscroll-behavior:contain}
+.help-body h3{font-size:1.02rem;margin:24px 0 6px;scroll-margin-top:8px}
+.help-body p,.help-body li,.help-body dd{line-height:1.55}
+.help-body ol,.help-body ul{padding-left:20px}
+.help-body dt{font-weight:600;margin-top:10px}
+.help-body dd{margin:2px 0 0;color:var(--muted)}
+.help-body a{color:var(--accent)}
+.help-body .tbl{margin:8px 0}
+.help-body .tbl th[scope=row]{color:var(--fg);font-family:var(--mono)}
+.help-body .warn{border-left:3px solid var(--accent);padding:6px 10px;background:var(--bg);border-radius:0 6px 6px 0}
+.toc ul{list-style:none;padding:0;margin:12px 0 0;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:2px 16px}
+.toc a{display:block;padding:4px 0;text-decoration:none}
 .btn{font:inherit;font-size:.85rem;font-weight:600;padding:6px 12px;min-height:34px;border-radius:6px;border:1px solid var(--line);background:var(--panel);color:var(--fg);cursor:pointer}
 .btn.pri{background:var(--fg);color:var(--bg);border-color:var(--fg)}
 .btn:focus-visible,.lnk:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
@@ -129,6 +155,244 @@ try{const t=localStorage.getItem('theme');if(t==='light'||t==='dark')document.do
 </script>
 </head>
 <body>
+<dialog class="help" id="help" aria-labelledby="helpTitle">
+  <div class="help-head"><h2 id="helpTitle" data-i18n="helpT"></h2><button type="button" id="helpClose" data-i18n-aria="close">×</button></div>
+  <div class="help-body" id="helpBody"></div>
+</dialog>
+<template id="help-es">
+  <nav class="toc" aria-label="Índice de la ayuda"><ul>
+    <li><a href="#h-inicio" data-help="inicio">Qué es SatScope</a></li>
+    <li><a href="#h-semana" data-help="semana">Qué hacer cada semana</a></li>
+    <li><a href="#h-puntuacion" data-help="puntuacion">La puntuación</a></li>
+    <li><a href="#h-indicadores" data-help="indicadores">Los cuatro indicadores</a></li>
+    <li><a href="#h-venta" data-help="venta">Ventas y reserva</a></li>
+    <li><a href="#h-cartera" data-help="cartera">Tu cartera y el registro</a></li>
+    <li><a href="#h-backtest" data-help="backtest">Backtest</a></li>
+    <li><a href="#h-ajustes" data-help="ajustes">Ajustes</a></li>
+    <li><a href="#h-datos" data-help="datos">De dónde salen los datos</a></li>
+    <li><a href="#h-app" data-help="app">Instalar y actualizar</a></li>
+    <li><a href="#h-privacidad" data-help="privacidad">Privacidad</a></li>
+    <li><a href="#h-faq" data-help="faq">Preguntas frecuentes</a></li>
+  </ul></nav>
+
+  <h3 id="h-inicio">Qué es SatScope</h3>
+  <p>SatScope te dice cada semana cuánto Bitcoin comprar siguiendo un <strong>DCA dinámico</strong>: en lugar de comprar siempre la misma cantidad, compra más cuando el mercado tiene miedo, no compra cuando está tranquilo y vende un poco cuando hay euforia.</p>
+  <p>Todo se calcula en tu navegador con datos públicos. No necesitas cuenta.</p>
+
+  <h3 id="h-semana">Qué hacer cada semana</h3>
+  <ol>
+    <li>Abre SatScope a partir del <strong>lunes</strong>. La señal sale del cierre semanal del domingo y no cambia en toda la semana.</li>
+    <li>Lee la acción: <strong>Comprar</strong> (cuánto), <strong>Esperar</strong> o <strong>Vender</strong> (cuánto BTC).</li>
+    <li>Haz la operación donde compres habitualmente, por ejemplo en Polygon.</li>
+    <li>Pulsa <strong>«Marcar como hecha»</strong> y corrige el importe y los BTC con lo que pagaste y recibiste de verdad.</li>
+  </ol>
+  <p>Si quieres que te lo recuerde, usa <strong>«Recordatorio semanal»</strong> (en Tu cartera): añade a tu calendario un aviso cada lunes a las 9:00.</p>
+
+  <h3 id="h-puntuacion">La puntuación</h3>
+  <p>Va de <strong>0</strong> (miedo extremo: el precio está barato respecto a su historia) a <strong>100</strong> (euforia). Según el tramo, tu aportación base de <span data-v="usd:base"></span> se multiplica así:</p>
+  <table class="tbl"><thead><tr><th scope="col">Puntuación</th><th scope="col">Multiplicador</th><th scope="col">Compra</th></tr></thead><tbody>
+    <tr><th scope="row">0–20</th><td data-v="mul:0"></td><td data-v="amt:0"></td></tr>
+    <tr><th scope="row">20–40</th><td data-v="mul:1"></td><td data-v="amt:1"></td></tr>
+    <tr><th scope="row">40–60</th><td data-v="mul:2"></td><td data-v="amt:2"></td></tr>
+    <tr><th scope="row">60–80</th><td data-v="mul:3"></td><td data-v="amt:3"></td></tr>
+    <tr><th scope="row">80–100</th><td data-v="mul:4"></td><td data-v="amt:4"></td></tr>
+  </tbody></table>
+  <p>Desde <span data-v="n:sellAt"></span> puntos se vende en lugar de comprar (ver <a href="#h-venta" data-help="venta">Ventas y reserva</a>).</p>
+  <p>El gráfico <strong>«Puntuación de las últimas 104 semanas»</strong> muestra cómo ha ido cambiando: la zona verde son los tramos en los que se compra y la línea discontinua, el umbral de venta.</p>
+
+  <h3 id="h-indicadores">Los cuatro indicadores</h3>
+  <p>La puntuación es la media ponderada de cuatro indicadores, cada uno llevado a una escala de 0 a 100. Cada tarjeta muestra el valor del indicador y lo que aporta.</p>
+  <dl>
+    <dt>Fear &amp; Greed · peso <span data-v="n:wF"></span></dt>
+    <dd>El índice de sentimiento del mercado de alternative.me. Se usa tal cual.</dd>
+    <dt>Caída desde máximo · peso <span data-v="n:wD"></span></dt>
+    <dd>Cuánto está el precio por debajo de su máximo histórico. Sin caída aporta 100; con una caída del 80 % o más, 0. Es el indicador con más peso.</dd>
+    <dt>Precio / MA200 semanas · peso <span data-v="n:wW"></span></dt>
+    <dd>El precio dividido entre la media de los últimos 200 cierres semanales. En escala logarítmica: en la media (×1) o por debajo aporta 0, y a ×5 aporta 100.</dd>
+    <dt>RSI semanal · peso <span data-v="n:wR"></span></dt>
+    <dd>El índice de fuerza relativa de 14 semanas, con el suavizado de Wilder (el mismo que usa TradingView).</dd>
+  </dl>
+
+  <h3 id="h-venta">Ventas y reserva</h3>
+  <p>Cuando la puntuación llega a <span data-v="n:sellAt"></span> o más, toca vender el <span data-v="pct:sellPct"></span> del BTC que tienes. Si llevas el registro, la app te dice la cantidad exacta.</p>
+  <p>Lo que cobras pasa a tu <strong>reserva de ventas</strong>. Cuando la puntuación baja de <span data-v="n:reuseBelow"></span> (miedo extremo), la compra de esa semana se duplica con dinero de la reserva, hasta agotarla. La app calcula la reserva sola a partir del registro.</p>
+  <p>En el backtest, vender poco y reutilizar lo vendido en las caídas da un resultado parecido a no vender nunca, pero recoge beneficios en las fases de euforia y deja dinero listo para la siguiente caída.</p>
+
+  <h3 id="h-cartera">Tu cartera y el registro</h3>
+  <p>Cada operación que apuntas, con «Marcar como hecha» o con «Añadir operación a mano», alimenta el resumen:</p>
+  <ul>
+    <li><strong>BTC</strong>: lo que tienes según el registro.</li>
+    <li><strong>Valor hoy</strong>: tus BTC al precio actual, más la reserva.</li>
+    <li><strong>Dinero aportado</strong>: lo que has puesto de tu bolsillo. Lo pagado con la reserva no cuenta.</li>
+    <li><strong>Rentabilidad</strong>: el valor de hoy frente al dinero aportado.</li>
+    <li><strong>Precio medio</strong>: lo pagado en total entre los BTC comprados.</li>
+    <li><strong>Reserva de ventas</strong>: lo cobrado en ventas menos lo que ya has reutilizado.</li>
+    <li><strong>Semanas saltadas</strong>: semanas ya cerradas en las que tocaba comprar o vender y no apuntaste nada.</li>
+  </ul>
+  <p>Tipos de operación: <strong>Compra</strong> (importe pagado, BTC recibido y parte pagada con la reserva), <strong>Venta</strong> (dólares recibidos y BTC vendido) y <strong>Ajuste de reserva</strong> (dinero que sumas a la reserva o, en negativo, que restas).</p>
+  <p class="warn">El registro se guarda <strong>solo en este navegador</strong>. Usa «Exportar CSV» de vez en cuando como copia, e «Importar CSV» para recuperarlo en otro dispositivo. Al importar no se duplican las operaciones repetidas.</p>
+
+  <h3 id="h-backtest">Backtest</h3>
+  <p>Simula semana a semana tu estrategia, con los ajustes actuales y desde el año que elijas, y la compara con un <strong>DCA fijo</strong>: la aportación base todas las semanas. Usa los datos guardados para los años antiguos y los datos en directo para las semanas recientes. No incluye comisiones.</p>
+  <p>Sirve para comparar ajustes, no para predecir: el histórico de Bitcoin solo tiene unos pocos ciclos.</p>
+
+  <h3 id="h-ajustes">Ajustes</h3>
+  <p>En «Ajustes de la estrategia» puedes cambiar la aportación base, los pesos de los indicadores, el multiplicador de cada tramo, el umbral y el porcentaje de venta, y desde qué puntuación se usa la reserva. Todo se recalcula al instante, también el backtest y esta ayuda.</p>
+  <p>Solo se guardan los valores que cambias. «Mostrar equivalencia en euros» solo cambia lo que ves: la estrategia y el registro van en dólares.</p>
+
+  <h3 id="h-datos">De dónde salen los datos</h3>
+  <ul>
+    <li><strong>Precios</strong>: velas diarias de Binance (BTC/USDT). Si Binance falla, de Bitstamp (BTC/USD).</li>
+    <li><strong>Fear &amp; Greed</strong>: alternative.me. Si falla, se usan los valores guardados.</li>
+    <li><strong>Euros</strong>: el cambio EUR/USD de Binance o de Bitstamp.</li>
+  </ul>
+  <p>Si no hay ninguna fuente disponible, la app usa una copia semanal guardada en la propia página. La línea bajo «SatScope» dice siempre qué datos se están usando.</p>
+  <p><strong>Semanas cerradas</strong>: la señal usa el cierre del domingo, que termina a las 00:00 UTC del lunes (la 1:00 o las 2:00 en España). Por eso es la misma toda la semana.</p>
+
+  <h3 id="h-app">Instalar y actualizar</h3>
+  <ul>
+    <li><strong>Instalar</strong>: en Android y en Chrome o Edge de escritorio, con el botón «Instalar app» o el icono de la barra de direcciones. En iPhone o iPad, Compartir → «Añadir a pantalla de inicio».</li>
+    <li><strong>Sin conexión</strong>: la app abre igual y usa los datos guardados.</li>
+    <li><strong>Versiones nuevas</strong>: aparece un aviso abajo; pulsa «Actualizar».</li>
+    <li><strong>Recordatorio</strong>: «Recordatorio semanal» añade a tu calendario un aviso cada lunes a las 9:00.</li>
+  </ul>
+
+  <h3 id="h-privacidad">Privacidad</h3>
+  <p>No hay cuentas. Tus ajustes, el idioma, el tema y el registro se guardan solo en tu navegador. Los precios los pide tu navegador directamente a Binance, Bitstamp y alternative.me. La web cuenta las visitas con Vercel Web Analytics, sin cookies ni datos personales.</p>
+
+  <h3 id="h-faq">Preguntas frecuentes</h3>
+  <dl>
+    <dt>¿Qué hago si me salto una semana?</dt>
+    <dd>Nada especial: no hace falta recuperarla. La semana siguiente sigue la acción que toque. Aparecerá en «Semanas saltadas» para que lo tengas en cuenta.</dd>
+    <dt>¿Por qué la puntuación no cambia aunque el precio se mueva?</dt>
+    <dd>Porque solo usa semanas cerradas. El precio actual aparece debajo de la acción, pero la señal no cambia hasta el próximo cierre del domingo.</dd>
+    <dt>¿Por qué todo va en dólares?</dt>
+    <dd>Porque las compras se hacen en dólares (USDC). Si te resulta útil, activa la equivalencia en euros en los ajustes.</dd>
+    <dt>He cambiado de móvil, ¿cómo recupero mi registro?</dt>
+    <dd>Exporta el CSV en el dispositivo antiguo e impórtalo en el nuevo. Si ya no tienes el antiguo, añade las operaciones a mano.</dd>
+    <dt>Arriba pone «Sin conexión a las APIs».</dt>
+    <dd>Las fuentes de datos no responden y la app está usando los datos guardados. Comprueba tu conexión y vuelve a abrirla.</dd>
+  </dl>
+
+  <p class="warn">SatScope es una herramienta de análisis basada en datos históricos. <strong>No es asesoramiento financiero.</strong> Invierte solo dinero que puedas dejar quieto durante años.</p>
+</template>
+<template id="help-en">
+  <nav class="toc" aria-label="Help contents"><ul>
+    <li><a href="#h-inicio" data-help="inicio">What SatScope is</a></li>
+    <li><a href="#h-semana" data-help="semana">What to do each week</a></li>
+    <li><a href="#h-puntuacion" data-help="puntuacion">The score</a></li>
+    <li><a href="#h-indicadores" data-help="indicadores">The four indicators</a></li>
+    <li><a href="#h-venta" data-help="venta">Sales and reserve</a></li>
+    <li><a href="#h-cartera" data-help="cartera">Your portfolio and trade log</a></li>
+    <li><a href="#h-backtest" data-help="backtest">Backtest</a></li>
+    <li><a href="#h-ajustes" data-help="ajustes">Settings</a></li>
+    <li><a href="#h-datos" data-help="datos">Where the data comes from</a></li>
+    <li><a href="#h-app" data-help="app">Installing and updating</a></li>
+    <li><a href="#h-privacidad" data-help="privacidad">Privacy</a></li>
+    <li><a href="#h-faq" data-help="faq">FAQ</a></li>
+  </ul></nav>
+
+  <h3 id="h-inicio">What SatScope is</h3>
+  <p>Every week, SatScope tells you how much Bitcoin to buy using <strong>dynamic DCA</strong>: instead of always buying the same amount, it buys more when the market is fearful, holds when it's calm and sells a little when there's euphoria.</p>
+  <p>Everything is worked out in your browser from public data. You don't need an account.</p>
+
+  <h3 id="h-semana">What to do each week</h3>
+  <ol>
+    <li>Open SatScope from <strong>Monday</strong> on. The signal comes from Sunday's weekly close and stays the same all week.</li>
+    <li>Read the action: <strong>Buy</strong> (how much), <strong>Hold</strong> or <strong>Sell</strong> (how much BTC).</li>
+    <li>Make the trade wherever you usually buy, for example on Polygon.</li>
+    <li>Tap <strong>"Mark as done"</strong> and correct the amount and BTC to what you actually paid and received.</li>
+  </ol>
+  <p>If you'd like a reminder, use <strong>"Weekly reminder"</strong> (under Your portfolio): it adds an alert to your calendar every Monday at 9:00.</p>
+
+  <h3 id="h-puntuacion">The score</h3>
+  <p>It runs from <strong>0</strong> (extreme fear: the price is cheap compared with its history) to <strong>100</strong> (euphoria). Depending on the band, your base amount of <span data-v="usd:base"></span> is multiplied like this:</p>
+  <table class="tbl"><thead><tr><th scope="col">Score</th><th scope="col">Multiplier</th><th scope="col">Buy</th></tr></thead><tbody>
+    <tr><th scope="row">0–20</th><td data-v="mul:0"></td><td data-v="amt:0"></td></tr>
+    <tr><th scope="row">20–40</th><td data-v="mul:1"></td><td data-v="amt:1"></td></tr>
+    <tr><th scope="row">40–60</th><td data-v="mul:2"></td><td data-v="amt:2"></td></tr>
+    <tr><th scope="row">60–80</th><td data-v="mul:3"></td><td data-v="amt:3"></td></tr>
+    <tr><th scope="row">80–100</th><td data-v="mul:4"></td><td data-v="amt:4"></td></tr>
+  </tbody></table>
+  <p>From <span data-v="n:sellAt"></span> points on, it sells instead of buying (see <a href="#h-venta" data-help="venta">Sales and reserve</a>).</p>
+  <p>The <strong>"Score over the last 104 weeks"</strong> chart shows how it has changed: the green zone is the bands that buy and the dashed line is the sell threshold.</p>
+
+  <h3 id="h-indicadores">The four indicators</h3>
+  <p>The score is a weighted average of four indicators, each mapped to a 0–100 scale. Each card shows the indicator's value and what it contributes.</p>
+  <dl>
+    <dt>Fear &amp; Greed · weight <span data-v="n:wF"></span></dt>
+    <dd>alternative.me's market sentiment index, used as is.</dd>
+    <dt>Drawdown from ATH · weight <span data-v="n:wD"></span></dt>
+    <dd>How far the price is below its all-time high. No drawdown contributes 100; a drawdown of 80% or more, 0. It's the indicator with the most weight.</dd>
+    <dt>Price / 200-week MA · weight <span data-v="n:wW"></span></dt>
+    <dd>The price divided by the average of the last 200 weekly closes. On a log scale: at the average (×1) or below it contributes 0, and at ×5 it contributes 100.</dd>
+    <dt>Weekly RSI · weight <span data-v="n:wR"></span></dt>
+    <dd>The 14-week relative strength index, with Wilder's smoothing (the same one TradingView uses).</dd>
+  </dl>
+
+  <h3 id="h-venta">Sales and reserve</h3>
+  <p>When the score reaches <span data-v="n:sellAt"></span> or more, it's time to sell <span data-v="pct:sellPct"></span> of the BTC you hold. If you keep the trade log, the app tells you the exact amount.</p>
+  <p>What you get goes into your <strong>sales reserve</strong>. When the score drops below <span data-v="n:reuseBelow"></span> (extreme fear), that week's purchase is doubled with money from the reserve, until it runs out. The app works out the reserve from the trade log.</p>
+  <p>In the backtest, selling a little and reusing the proceeds in downturns gives a result close to never selling, but it takes some profit in euphoric phases and leaves money ready for the next drop.</p>
+
+  <h3 id="h-cartera">Your portfolio and trade log</h3>
+  <p>Every trade you log, with "Mark as done" or "Add a trade by hand", feeds the summary:</p>
+  <ul>
+    <li><strong>BTC</strong>: what you hold according to the log.</li>
+    <li><strong>Value today</strong>: your BTC at the current price, plus the reserve.</li>
+    <li><strong>Money put in</strong>: what came out of your pocket. Purchases paid from the reserve don't count.</li>
+    <li><strong>Return</strong>: today's value compared with the money put in.</li>
+    <li><strong>Average price</strong>: the total paid divided by the BTC bought.</li>
+    <li><strong>Sales reserve</strong>: cash from sales minus what you've already reused.</li>
+    <li><strong>Weeks skipped</strong>: closed weeks when you were due to buy or sell and didn't log anything.</li>
+  </ul>
+  <p>Trade types: <strong>Buy</strong> (amount paid, BTC received and the part paid from the reserve), <strong>Sell</strong> (dollars received and BTC sold) and <strong>Reserve adjustment</strong> (money you add to the reserve or, as a negative, take from it).</p>
+  <p class="warn">The log is saved <strong>only in this browser</strong>. Use "Export CSV" now and then as a backup, and "Import CSV" to restore it on another device. Importing never duplicates trades you already have.</p>
+
+  <h3 id="h-backtest">Backtest</h3>
+  <p>It simulates your strategy week by week, with the current settings and from the year you choose, and compares it with <strong>fixed DCA</strong>: the base amount every week. It uses saved data for the early years and live data for recent weeks. It doesn't include fees.</p>
+  <p>Use it to compare settings, not to predict: Bitcoin's history only has a few cycles.</p>
+
+  <h3 id="h-ajustes">Settings</h3>
+  <p>Under "Strategy settings" you can change the base amount, the indicator weights, each band's multiplier, the sell threshold and percentage, and the score below which the reserve is used. Everything updates instantly, including the backtest and this help.</p>
+  <p>Only the values you change are saved. "Show euro equivalent" only changes what you see: the strategy and the log stay in dollars.</p>
+
+  <h3 id="h-datos">Where the data comes from</h3>
+  <ul>
+    <li><strong>Prices</strong>: daily candles from Binance (BTC/USDT). If Binance fails, from Bitstamp (BTC/USD).</li>
+    <li><strong>Fear &amp; Greed</strong>: alternative.me. If it fails, saved values are used.</li>
+    <li><strong>Euros</strong>: the EUR/USD rate from Binance or Bitstamp.</li>
+  </ul>
+  <p>If no source is available, the app uses a weekly copy saved in the page itself. The line under "SatScope" always says which data is in use.</p>
+  <p><strong>Closed weeks</strong>: the signal uses Sunday's close, which ends at 00:00 UTC on Monday. That's why it stays the same all week.</p>
+
+  <h3 id="h-app">Installing and updating</h3>
+  <ul>
+    <li><strong>Install</strong>: on Android and in desktop Chrome or Edge, with the "Install app" button or the icon in the address bar. On iPhone or iPad, Share → "Add to Home Screen".</li>
+    <li><strong>Offline</strong>: the app still opens and uses saved data.</li>
+    <li><strong>New versions</strong>: a notice appears at the bottom; tap "Update".</li>
+    <li><strong>Reminder</strong>: "Weekly reminder" adds an alert to your calendar every Monday at 9:00.</li>
+  </ul>
+
+  <h3 id="h-privacidad">Privacy</h3>
+  <p>There are no accounts. Your settings, language, theme and trade log are saved only in your browser. Your browser fetches prices directly from Binance, Bitstamp and alternative.me. The site counts visits with Vercel Web Analytics, with no cookies and no personal data.</p>
+
+  <h3 id="h-faq">FAQ</h3>
+  <dl>
+    <dt>What if I skip a week?</dt>
+    <dd>Nothing special: there's no need to catch up. The next week, just follow whatever action comes up. It will show under "Weeks skipped" so you're aware of it.</dd>
+    <dt>Why doesn't the score change when the price moves?</dt>
+    <dd>Because it only uses closed weeks. The current price appears below the action, but the signal doesn't change until the next Sunday close.</dd>
+    <dt>Why is everything in dollars?</dt>
+    <dd>Because purchases are made in dollars (USDC). If it helps, turn on the euro equivalent in the settings.</dd>
+    <dt>I've changed phones. How do I get my trade log back?</dt>
+    <dd>Export the CSV on the old device and import it on the new one. If you no longer have the old one, add the trades by hand.</dd>
+    <dt>The header says "APIs unreachable".</dt>
+    <dd>The data sources aren't responding and the app is using saved data. Check your connection and open it again.</dd>
+  </dl>
+
+  <p class="warn">SatScope is an analysis tool based on historical data. <strong>It isn't financial advice.</strong> Only invest money you can leave untouched for years.</p>
+</template>
 <div class="update" id="update" role="status" hidden>
   <span data-i18n="updMsg"></span>
   <button type="button" class="go" id="updGo" data-i18n="updGo"></button>
@@ -139,6 +403,7 @@ try{const t=localStorage.getItem('theme');if(t==='light'||t==='dark')document.do
     <div><h1>SatScope</h1><span class="src" id="src">…</span></div>
     <div class="ctrls">
       <div class="seg" id="installSeg" hidden><button type="button" id="installBtn" data-i18n="install"></button></div>
+      <div class="seg"><button type="button" data-help="" data-i18n="help"></button></div>
       <div class="seg" role="group" id="langSeg" aria-label="Idioma / Language">
         <button type="button" data-lang="es" lang="es">ES</button><button type="button" data-lang="en" lang="en">EN</button>
       </div>
@@ -146,6 +411,12 @@ try{const t=localStorage.getItem('theme');if(t==='light'||t==='dark')document.do
         <button type="button" data-theme-opt="auto" data-i18n="tAuto"></button><button type="button" data-theme-opt="light" data-i18n="tLight"></button><button type="button" data-theme-opt="dark" data-i18n="tDark"></button>
       </div>
     </div>
+  </div>
+
+  <div class="welcome" id="welcome" role="note" hidden>
+    <span data-i18n="welcome"></span>
+    <button type="button" class="btn pri" data-help="semana" data-i18n="welcomeGo"></button>
+    <button type="button" class="x" id="welcomeX" data-i18n-aria="close">×</button>
   </div>
 
   <section>
@@ -165,18 +436,18 @@ try{const t=localStorage.getItem('theme');if(t==='light'||t==='dark')document.do
   </section>
 
   <section>
-    <h2 data-i18n="inds"></h2>
+    <h2><span data-i18n="inds"></span><button type="button" class="qh" data-help="indicadores" data-i18n-aria="helpOn">?</button></h2>
     <div class="inds" id="inds"></div>
   </section>
 
   <section>
-    <h2 data-i18n="hist"></h2>
+    <h2><span data-i18n="hist"></span><button type="button" class="qh" data-help="puntuacion" data-i18n-aria="helpOn">?</button></h2>
     <canvas id="chart" role="img"></canvas>
     <p class="note" data-i18n="histNote"></p>
   </section>
 
   <section>
-    <h2 data-i18n="pf"></h2>
+    <h2><span data-i18n="pf"></span><button type="button" class="qh" data-help="cartera" data-i18n-aria="helpOn">?</button></h2>
     <div class="stats" id="pfStats"></div>
     <p class="note" id="pfEmpty" data-i18n="pfEmpty"></p>
     <div class="ops" id="pfOps"></div>
@@ -204,7 +475,7 @@ try{const t=localStorage.getItem('theme');if(t==='light'||t==='dark')document.do
   </section>
 
   <section>
-    <div class="bt-head"><h2 data-i18n="bt"></h2><label><span data-i18n="btFrom"></span><select id="btFrom"></select></label></div>
+    <div class="bt-head"><h2><span data-i18n="bt"></span><button type="button" class="qh" data-help="backtest" data-i18n-aria="helpOn">?</button></h2><label><span data-i18n="btFrom"></span><select id="btFrom"></select></label></div>
     <table class="tbl" id="btTbl"></table>
     <div class="legend"><span><i style="background:var(--accent)"></i><span data-i18n="btDyn"></span></span><span><i style="background:var(--muted)"></i><span data-i18n="btDca"></span></span></div>
     <canvas id="btChart" role="img"></canvas>
@@ -213,7 +484,7 @@ try{const t=localStorage.getItem('theme');if(t==='light'||t==='dark')document.do
 
   <section>
     <details>
-      <summary data-i18n="settings"></summary>
+      <summary><span data-i18n="settings"></span><button type="button" class="qh" data-help="ajustes" data-i18n-aria="helpOn">?</button></summary>
       <div class="grid2">
         <label><span data-i18n="lBase"></span><input type="number" id="base" value="10" min="0" step="0.5"></label>
         <label><span data-i18n="lWF"></span><input type="number" id="wF" value="30"></label>
@@ -255,7 +526,7 @@ const clamp=v=>Math.max(0,Math.min(100,v));
 // Idioma
 const I18N={
   es:{loc:'es-ES',desc:'Panel de DCA dinámico para Bitcoin',loading:'Cargando…',live:(s,f)=>`Datos en directo · ${s}${f==='live'?' + alternative.me':f==='snap'?' · Fear & Greed no disponible: se usan los valores guardados':' · Fear & Greed no disponible: la puntuación se calcula sin él'}`,snap:d=>`Sin conexión a las APIs · datos guardados del ${d}`,
-    theme:'Tema',install:'Instalar app',updMsg:'Hay una nueva versión de SatScope.',updGo:'Actualizar',updLater:'Más tarde',tAuto:'Auto',tLight:'Claro',tDark:'Oscuro',calc:'Calculando la acción de esta semana…',tick0:'0 miedo',tick100:'100 euforia',
+    theme:'Tema',help:'Ayuda',helpT:'Ayuda de SatScope',close:'Cerrar',helpOn:'Ayuda sobre esta sección',welcome:'¿Primera vez aquí? Te explico en un minuto cómo funciona y qué hacer cada semana.',welcomeGo:'Ver la ayuda',install:'Instalar app',updMsg:'Hay una nueva versión de SatScope.',updGo:'Actualizar',updLater:'Más tarde',tAuto:'Auto',tLight:'Claro',tDark:'Oscuro',calc:'Calculando la acción de esta semana…',tick0:'0 miedo',tick100:'100 euforia',
     inds:'Indicadores',hist:'Puntuación de las últimas 104 semanas',histNote:'Línea discontinua: umbral de venta. Zona verde: tramos con compra.',
     settings:'Ajustes de la estrategia',lBase:'Aportación base ($)',lWF:'Peso Fear & Greed',lWD:'Peso caída desde máximo',lWW:'Peso MA200 semanas',lWR:'Peso RSI semanal',
     lSellAt:'Vender desde puntuación',lSellPct:'% de BTC a vender',saved:'Los ajustes se guardan en este navegador.',
@@ -286,7 +557,7 @@ const I18N={
     hSell:'Lo que cobres pasa a tu reserva de ventas y se usará para comprar más en las semanas de miedo extremo.',
     iF:'Fear & Greed',iD:'Caída desde máximo',iW:'Precio / MA200 semanas',iR:'RSI semanal',weight:'peso',adds:'Aporta'},
   en:{loc:'en-US',desc:'Dynamic DCA dashboard for Bitcoin',loading:'Loading…',live:(s,f)=>`Live data · ${s}${f==='live'?' + alternative.me':f==='snap'?' · Fear & Greed unavailable: using saved values':' · Fear & Greed unavailable: the score is worked out without it'}`,snap:d=>`APIs unreachable · saved data from ${d}`,
-    theme:'Theme',install:'Install app',updMsg:'A new version of SatScope is available.',updGo:'Update',updLater:'Later',tAuto:'Auto',tLight:'Light',tDark:'Dark',calc:'Working out this week’s action…',tick0:'0 fear',tick100:'100 greed',
+    theme:'Theme',help:'Help',helpT:'SatScope help',close:'Close',helpOn:'Help on this section',welcome:'First time here? Here\'s a one-minute guide to how it works and what to do each week.',welcomeGo:'Read the help',install:'Install app',updMsg:'A new version of SatScope is available.',updGo:'Update',updLater:'Later',tAuto:'Auto',tLight:'Light',tDark:'Dark',calc:'Working out this week’s action…',tick0:'0 fear',tick100:'100 greed',
     inds:'Indicators',hist:'Score over the last 104 weeks',histNote:'Dashed line: sell threshold. Green zone: bands that buy.',
     settings:'Strategy settings',lBase:'Base amount ($)',lWF:'Fear & Greed weight',lWD:'Drawdown from ATH weight',lWW:'200-week MA weight',lWR:'Weekly RSI weight',
     lSellAt:'Sell from score',lSellPct:'% of BTC to sell',saved:'Settings are saved in this browser.',
@@ -332,6 +603,7 @@ function applyLang(){
   document.querySelectorAll('[data-i18n-aria]').forEach(el=>el.setAttribute('aria-label',t[el.dataset.i18nAria]));
   document.querySelectorAll('#langSeg button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.lang===LANG));
   $('icsBtn').href=LANG==='es'?'/recordatorio.ics':'/reminder.ics';
+  if($('help').open)openHelp(null);
   $('src').textContent=SRC==='live'?t.live(LIVE.src,LIVE.fng):SRC==='snap'?t.snap(SNAP_END):t.loading;
   render();
 }
@@ -537,6 +809,43 @@ function mergeOps(list,incoming){
   return {list:out,added};
 }
 let CUR=null,FORM=false;
+
+// Ayuda: el contenido está en <template id="help-es"> y <template id="help-en">; los valores
+// marcados con data-v se rellenan con los ajustes actuales (n: número, usd: importe,
+// pct: porcentaje, mul:i: multiplicador del tramo i, amt:i: compra del tramo i)
+function fillHelp(){
+  const c=cfg();
+  $('helpBody').querySelectorAll('[data-v]').forEach(el=>{
+    const [k,a]=el.dataset.v.split(':');
+    const num=v=>fmt(v,v%1?2:0);
+    // Tramo i (de i·20 a i·20+20): si queda entero por encima del umbral de venta, se vende; con multiplicador 0, no se compra
+    const sells=c.sellAt<=a*20,m=c['m'+a];
+    el.textContent=k==='usd'?usd(c[a],2)
+      :k==='mul'?(sells||!m?'—':'×'+num(m))
+      :k==='amt'?(sells?T().sell:m?usd(c.base*m,2):'—')
+      :k==='pct'?num(c[a])+(LANG==='es'?' %':'%')
+      :num(c[a]);
+  });
+}
+function openHelp(id){
+  const d=$('help'),body=$('helpBody');
+  if(!d.open||body.dataset.lang!==LANG){body.replaceChildren($('help-'+LANG).content.cloneNode(true));body.dataset.lang=LANG}
+  fillHelp();
+  if(!d.open)d.showModal();
+  const target=id&&body.querySelector('#h-'+id);
+  if(target)target.scrollIntoView({block:'start'});else body.scrollTop=0;
+  try{localStorage.setItem('seenHelp','1')}catch(e){}
+  $('welcome').hidden=true;
+}
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-help]');if(!b)return;
+  e.preventDefault();e.stopPropagation(); // dentro de <summary> no abre ni cierra los ajustes
+  openHelp(b.dataset.help);
+});
+$('helpClose').addEventListener('click',()=>$('help').close());
+$('help').addEventListener('click',e=>{if(e.target===$('help'))$('help').close()}); // clic fuera del contenido
+$('welcomeX').addEventListener('click',()=>{$('welcome').hidden=true;try{localStorage.setItem('seenHelp','1')}catch(e){}});
+try{$('welcome').hidden=!!localStorage.getItem('seenHelp')}catch(e){}
 function render(){
   if(!ROWS)return;const c=cfg();
   try{const d={};for(const k of IDS)if(c[k]!==DEF[k])d[k]=c[k];localStorage.setItem('cfg',JSON.stringify(d))}catch(e){}
@@ -674,6 +983,7 @@ function draw(s,c){
   const ok=s.filter(v=>v!=null);cv.setAttribute('aria-label',I18N[LANG].chartAria(fmt(Math.min(...ok)),fmt(Math.max(...ok)),fmt(s.at(-1)),fmt(c.sellAt)));
 }
 for(const k of IDS)$(k).addEventListener('input',render);
+for(const k of IDS)$(k).addEventListener('input',()=>{if($('help').open)fillHelp()});
 addEventListener('resize',render);
 let savedTheme=null;try{savedTheme=localStorage.getItem('theme')}catch(e){}
 applyTheme(savedTheme);applyLang();
