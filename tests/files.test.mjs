@@ -70,3 +70,19 @@ test('La página no carga nada de Google ni de otros dominios salvo las APIs de 
     'polygon-bor-rpc.publicnode.com', '1rpc.io', 'polygon.drpc.org'];
   for (const h of ext) assert.ok(allowed.includes(h), `dominio inesperado en la página: ${h}`);
 });
+
+test('favicon.ico: icono válido de 16 y 32 px, enlazado, publicado y en la caché', () => {
+  const ico = readFileSync(new URL('favicon.ico', ROOT));
+  assert.equal(ico.readUInt16LE(0), 0, 'cabecera ICO: reservado');
+  assert.equal(ico.readUInt16LE(2), 1, 'cabecera ICO: tipo icono');
+  const n = ico.readUInt16LE(4);
+  const sizes = Array.from({ length: n }, (_, i) => ico[6 + i * 16] || 256).sort((a, b) => a - b);
+  assert.deepEqual(sizes, [16, 32]);
+  for (let i = 0; i < n; i++) { // cada imagen cabe dentro del archivo
+    const len = ico.readUInt32LE(6 + i * 16 + 8), off = ico.readUInt32LE(6 + i * 16 + 12);
+    assert.ok(off + len <= ico.length, `imagen ${i} fuera del archivo`);
+  }
+  assert.ok(HTML.includes('<link rel="icon" href="/favicon.ico"'), 'enlazado en la página');
+  assert.ok(published('/favicon.ico'), 'copiado en el build de Vercel');
+  assert.ok(SW.includes("'/favicon.ico'"), 'en SHELL del service worker');
+});

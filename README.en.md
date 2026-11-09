@@ -49,7 +49,7 @@ You can change the weights, multipliers, base amount and sell threshold under "S
 - **Built-in help** in Spanish and English: a "Help" button, a "?" on each section that opens the matching explanation, and a welcome note on the first visit. It shows the values from your settings.
 - **Trade log:** mark this week's action as done or add trades by hand. The app works out your BTC, money put in, value, return, average price, sales reserve and skipped weeks, and uses them to tell you exactly how much BTC to sell and how much reserve to use. It's only saved in your browser; you can export and import it as CSV.
 - **WBTC on Polygon:** an option for the app to talk about WBTC and, if you give your public Polygon address, read your WBTC balance (read-only, via public nodes), compare it with the trade log and work out sales from the real balance.
-- **Backtest** from any year you choose: your strategy against fixed DCA (invested, BTC accumulated, sales, value, return and average price).
+- **Backtest** from any year you choose: your strategy against fixed DCA. The main figure is how much more or less it is worth today than fixed DCA; return is secondary because the two invest different amounts.
 - Light, dark or automatic theme.
 - Optional euro equivalent for the action and the price. The strategy and the log stay in dollars, since purchases are made in dollars (USDC) on Polygon.
 - Weekly calendar reminder (.ics), every Monday at 9:00.

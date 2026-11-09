@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>SatScope</title>
 <meta name="description" content="Panel de DCA dinámico para Bitcoin">
+<link rel="icon" href="/favicon.ico" sizes="32x32">
 <link rel="icon" href="/icons/icon.svg" type="image/svg+xml">
 <link rel="icon" href="/icons/icon-192.png" type="image/png" sizes="192x192">
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
@@ -149,7 +150,14 @@ select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .tbl{width:100%;border-collapse:collapse;font-size:.85rem}
 .tbl th,.tbl td{padding:6px 4px;border-bottom:1px solid var(--line);text-align:right;font-variant-numeric:tabular-nums}
 .tbl th:first-child,.tbl td:first-child{text-align:left;color:var(--muted);font-weight:400}
-.tbl td{font-family:var(--mono)}
+.tbl td{font-family:var(--mono);white-space:nowrap}
+.bt-sum{display:grid;gap:2px;margin-bottom:12px;padding:12px 14px;border:1px solid var(--line);border-radius:8px;background:var(--bg)}
+.bt-sum .n{font-size:.78rem;color:var(--muted)}
+.bt-sum strong{font-family:var(--mono);font-size:1.6rem;font-variant-numeric:tabular-nums}
+.bt-sum strong.up{color:var(--buy)}
+.bt-sum strong.down{color:var(--sell)}
+.bt-sum div span{font-weight:600}
+.tbl tr.sec th,.tbl tr.sec td{font-size:.78rem;color:var(--muted)}
 .tbl thead th{font-size:.75rem;color:var(--muted)}
 .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.75rem;color:var(--muted);margin:12px 0 4px}
 .legend i{display:inline-block;width:14px;height:3px;border-radius:2px;vertical-align:middle;margin-right:6px}
@@ -253,6 +261,7 @@ try{const t=localStorage.getItem('theme');if(t==='light'||t==='dark')document.do
 
   <h3 id="h-backtest">Backtest</h3>
   <p>Simula semana a semana tu estrategia, con los ajustes actuales y desde el año que elijas, y la compara con un <strong>DCA fijo</strong>: la aportación base todas las semanas. Usa los datos guardados para los años antiguos y los datos en directo para las semanas recientes. No incluye comisiones.</p>
+  <p>El dato principal es cuánto vale hoy tu estrategia <strong>más o menos que el DCA fijo</strong>. La rentabilidad aparece como dato secundario porque se calcula sobre lo invertido, y tu estrategia no invierte lo mismo que el DCA fijo: si invierte menos, el porcentaje exagera la ventaja.</p>
   <p>Sirve para comparar ajustes, no para predecir: el histórico de Bitcoin solo tiene unos pocos ciclos.</p>
 
   <h3 id="h-ajustes">Ajustes</h3>
@@ -378,6 +387,7 @@ try{const t=localStorage.getItem('theme');if(t==='light'||t==='dark')document.do
 
   <h3 id="h-backtest">Backtest</h3>
   <p>It simulates your strategy week by week, with the current settings and from the year you choose, and compares it with <strong>fixed DCA</strong>: the base amount every week. It uses saved data for the early years and live data for recent weeks. It doesn't include fees.</p>
+  <p>The main figure is how much your strategy is worth today <strong>more or less than fixed DCA</strong>. Return is shown as a secondary figure because it's worked out on the money invested, and your strategy doesn't invest the same as fixed DCA: if it invests less, the percentage overstates the advantage.</p>
   <p>Use it to compare settings, not to predict: Bitcoin's history only has a few cycles.</p>
 
   <h3 id="h-ajustes">Settings</h3>
@@ -510,6 +520,11 @@ try{const t=localStorage.getItem('theme');if(t==='light'||t==='dark')document.do
 
   <section>
     <div class="bt-head"><h2><span data-i18n="bt"></span><button type="button" class="qh" data-help="backtest" data-i18n-aria="helpOn">?</button></h2><label><span data-i18n="btFrom"></span><select id="btFrom"></select></label></div>
+    <div class="bt-sum" id="btSum" role="status">
+      <span class="n" data-i18n="rVal"></span>
+      <div><strong id="btDiffV"></strong> <span id="btDiffT"></span></div>
+      <span class="n" id="btDiffSub"></span>
+    </div>
     <table class="tbl" id="btTbl"></table>
     <div class="legend"><span><i style="background:var(--accent)"></i><span data-i18n="btDyn"></span></span><span><i style="background:var(--muted)"></i><span data-i18n="btDca"></span></span></div>
     <canvas id="btChart" role="img"></canvas>
@@ -581,8 +596,8 @@ const I18N={
     sell:'Vender',buy:'Comprar',hold:'Esperar',
     aSell:p=>`Vende el ${p} % de tu {U} esta semana`,aBuy:(a,m)=>`Compra ${a} $ esta semana (×${m})`,aHold:'Esta semana no toca comprar ni vender',
     price:p=>`BTC ahora a ${p} $`,wk:(d,n)=>`Señal con el cierre semanal del ${d} · la siguiente, tras el cierre del ${n}`,wkSnap:d=>`Señal con los datos guardados del ${d}`,
-    bt:'Backtest',btFrom:'Desde',btDyn:'Tu estrategia',btDca:'DCA fijo',rInv:'Invertido',rBtc:'BTC acumulado',rSold:'Reserva en efectivo',rVal:'Valor hoy',rRet:'Rentabilidad',rAvg:'Precio medio de compra',
-    btNote:'Simulación semanal con los ajustes de abajo. Lo vendido se guarda como reserva y se usa para comprar el doble cuando la puntuación baja del umbral de reserva. DCA fijo: la aportación base todas las semanas. Sin comisiones. Valor hoy = BTC × último cierre semanal + reserva sin usar.',
+    bt:'Backtest',btFrom:'Desde',btMore:'más que el DCA fijo',btLess:'menos que el DCA fijo',btSame:'igual que el DCA fijo',btInvMore:d=>`Con ${d} más invertidos.`,btInvLess:d=>`Con ${d} menos invertidos.`,btInvSame:'Con lo mismo invertido.',btRetSub:(a,b)=>`Rentabilidad sobre lo invertido: ${a} frente a ${b}.`,btDyn:'Tu estrategia',btDca:'DCA fijo',rInv:'Invertido',rBtc:'BTC acumulado',rSold:'Reserva en efectivo',rVal:'Valor hoy',rRet:'Rentabilidad',rAvg:'Precio medio de compra',
+    btNote:'Simulación semanal con los ajustes de abajo. Lo vendido se guarda como reserva y se usa para comprar el doble cuando la puntuación baja del umbral de reserva. DCA fijo: la aportación base todas las semanas. Sin comisiones. Valor hoy = BTC × último cierre semanal + reserva sin usar. La rentabilidad se calcula sobre lo invertido, que no es igual en las dos columnas; por eso el dato principal es la diferencia de valor.',
     lReuse:'Usar reserva por debajo de',lEur:'Mostrar equivalencia en euros',
     eurP:e=>`(≈ ${e} €)`,eurA:(e,r)=>`Equivale a ≈ ${e} € (1 € = ${r} $)`,ics:'Recordatorio semanal',
     chartAria:(mn,mx,last,sell)=>`Gráfico de la puntuación de las últimas 104 semanas: mínima ${mn}, máxima ${mx}, actual ${last}. Umbral de venta: ${sell}.`,
@@ -616,8 +631,8 @@ const I18N={
     sell:'Sell',buy:'Buy',hold:'Hold',
     aSell:p=>`Sell ${p}% of your {U} this week`,aBuy:(a,m)=>`Buy $${a} this week (×${m})`,aHold:'No buying or selling this week',
     price:p=>`BTC now at $${p}`,wk:(d,n)=>`Signal from the weekly close of ${d} · next one after the close of ${n}`,wkSnap:d=>`Signal from saved data of ${d}`,
-    bt:'Backtest',btFrom:'From',btDyn:'Your strategy',btDca:'Fixed DCA',rInv:'Invested',rBtc:'BTC accumulated',rSold:'Cash reserve',rVal:'Value today',rRet:'Return',rAvg:'Average buy price',
-    btNote:'Weekly simulation with the settings below. Sale proceeds are kept as a reserve and used to buy double when the score drops below the reserve threshold. Fixed DCA: the base amount every week. No fees. Value today = BTC × last weekly close + unused reserve.',
+    bt:'Backtest',btFrom:'From',btMore:'more than fixed DCA',btLess:'less than fixed DCA',btSame:'the same as fixed DCA',btInvMore:d=>`With ${d} more invested.`,btInvLess:d=>`With ${d} less invested.`,btInvSame:'With the same amount invested.',btRetSub:(a,b)=>`Return on money invested: ${a} vs ${b}.`,btDyn:'Your strategy',btDca:'Fixed DCA',rInv:'Invested',rBtc:'BTC accumulated',rSold:'Cash reserve',rVal:'Value today',rRet:'Return',rAvg:'Average buy price',
+    btNote:'Weekly simulation with the settings below. Sale proceeds are kept as a reserve and used to buy double when the score drops below the reserve threshold. Fixed DCA: the base amount every week. No fees. Value today = BTC × last weekly close + unused reserve. Return is worked out on the money invested, which differs between the two columns; that\'s why the main figure is the difference in value.',
     lReuse:'Use reserve below score',lEur:'Show euro equivalent',
     eurP:e=>`(≈ €${e})`,eurA:(e,r)=>`That's about €${e} (€1 = $${r})`,ics:'Weekly reminder',
     chartAria:(mn,mx,last,sell)=>`Chart of the score over the last 104 weeks: low ${mn}, high ${mx}, current ${last}. Sell threshold: ${sell}.`,
@@ -782,6 +797,8 @@ function backtest(rows,c){
   for(const o of[S,D])o.ret=o.inv?(o.val-o.inv)/o.inv*100:0;
   return {S,D,vals};
 }
+// Comparación del backtest: diferencia de valor hoy (dato principal) y de dinero invertido
+function btCompare(S,D){return {diff:S.val-D.val,inv:S.inv-D.inv}}
 
 let ROWS=null,HIST=null,NOW=null,EURX=null; // EURX: dólares por euro
 const showEur=()=>$('showEur').checked;
@@ -1065,9 +1082,16 @@ function renderBt(c){
   }
   const rows=HIST.filter(r=>r.t>=sel.value+'-01-01');if(rows.length<2)return;
   const {S,D,vals}=backtest(rows,c);
-  const row=(k,f)=>`<tr><th scope="row">${t[k]}</th><td>${f(S)}</td><td>${f(D)}</td></tr>`;
+  // Dato principal: diferencia de valor hoy (redondeada al dólar, igual que se muestra)
+  const {diff,inv}=btCompare(S,D),d=Math.round(diff),di=Math.round(inv);
+  // Espacio fino irrompible entre la cifra y el símbolo: con la letra grande, el espacio normal se ve demasiado ancho
+  $('btDiffV').textContent=(d>0?'+'+usd(d):usd(Math.abs(d))).replace(' ','\u202f');
+  $('btDiffV').className=d>0?'up':d<0?'down':'';
+  $('btDiffT').textContent=d>0?t.btMore:d<0?t.btLess:t.btSame;
+  $('btDiffSub').textContent=(di>0?t.btInvMore(usd(di)):di<0?t.btInvLess(usd(-di)):t.btInvSame)+' '+t.btRetSub(pct(S.ret),pct(D.ret));
+  const row=(k,f,cls='')=>`<tr${cls?` class="${cls}"`:''}><th scope="row">${t[k]}</th><td>${f(S)}</td><td>${f(D)}</td></tr>`;
   $('btTbl').innerHTML=`<thead><tr><th></th><th scope="col">${t.btDyn}</th><th scope="col">${t.btDca}</th></tr></thead><tbody>`+
-    row('rInv',o=>usd(o.inv))+row('rBtc',o=>fmt(o.btc,5))+row('rSold',o=>usd(o.cash))+row('rVal',o=>usd(o.val))+row('rRet',o=>pct(o.ret))+row('rAvg',o=>o.avg?usd(o.avg):'–')+'</tbody>';
+    row('rVal',o=>usd(o.val))+row('rInv',o=>usd(o.inv))+row('rBtc',o=>fmt(o.btc,5))+row('rSold',o=>usd(o.cash))+row('rAvg',o=>o.avg?usd(o.avg):'–')+row('rRet',o=>pct(o.ret),'sec')+'</tbody>';
   drawBt(vals,rows[0].t,rows.at(-1).t);
 }
 function drawBt(v,from,to){

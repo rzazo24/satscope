@@ -4,7 +4,7 @@
 // así cada despliegue genera un service worker nuevo y la página puede avisar.
 const VERSION = '__BUILD__';
 const CACHE = `satscope-${VERSION}`;
-const SHELL = ['/', '/manifest.webmanifest', '/icons/icon.svg', '/icons/icon-192.png', '/icons/icon-512.png', '/icons/apple-touch-icon.png',
+const SHELL = ['/', '/manifest.webmanifest', '/favicon.ico', '/icons/icon.svg', '/icons/icon-192.png', '/icons/icon-512.png', '/icons/apple-touch-icon.png',
   '/fonts/ibm-plex-sans.woff2', '/fonts/ibm-plex-mono-400.woff2', '/fonts/ibm-plex-mono-600.woff2'];
 
 self.addEventListener('install', e => {

@@ -88,3 +88,12 @@ test('Instantánea: semanas consecutivas y datos completos', () => {
     assert.ok(score(r, DEF) >= 0 && score(r, DEF) <= 100, r.t);
   }
 });
+
+test('Backtest: la comparación destaca la diferencia de valor, no la rentabilidad', () => {
+  const { btCompare } = vm.runInContext('({btCompare})', ctx);
+  const S = { val: 30178, inv: 3570, ret: 745.3 }, D = { val: 20935, inv: 4580, ret: 357.1 };
+  const r = btCompare(S, D);
+  assert.equal(r.diff, 9243);  // dato principal: +9.243 $ más que el DCA fijo
+  assert.equal(r.inv, -1010);  // con 1010 $ menos invertidos
+  assert.equal(btCompare(D, S).diff, -9243);
+});
