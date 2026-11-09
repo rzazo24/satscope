@@ -4,7 +4,8 @@
 // así cada despliegue genera un service worker nuevo y la página puede avisar.
 const VERSION = '__BUILD__';
 const CACHE = `satscope-${VERSION}`;
-const SHELL = ['/', '/manifest.webmanifest', '/icons/icon.svg', '/icons/icon-192.png', '/icons/icon-512.png', '/icons/apple-touch-icon.png'];
+const SHELL = ['/', '/manifest.webmanifest', '/icons/icon.svg', '/icons/icon-192.png', '/icons/icon-512.png', '/icons/apple-touch-icon.png',
+  '/fonts/ibm-plex-sans.woff2', '/fonts/ibm-plex-mono-400.woff2', '/fonts/ibm-plex-mono-600.woff2'];
 
 self.addEventListener('install', e => {
   // Descarga la versión nueva sin pasar por la caché HTTP. No se activa sola:
@@ -42,15 +43,14 @@ self.addEventListener('fetch', e => {
     return;
   }
 
-  // Archivos propios y fuentes de Google: la caché primero y, si no está, la red.
-  const fonts = url.hostname === 'fonts.googleapis.com' || url.hostname === 'fonts.gstatic.com';
-  if (url.origin === location.origin || fonts) {
+  // Archivos propios: la caché primero y, si no está, la red.
+  if (url.origin === location.origin) {
     e.respondWith(
       caches.open(CACHE).then(async c => {
-        const hit = await c.match(req, { ignoreSearch: url.origin === location.origin });
+        const hit = await c.match(req, { ignoreSearch: true });
         if (hit) return hit;
         const res = await fetch(req);
-        if (res.ok || res.type === 'opaque') c.put(req, res.clone());
+        if (res.ok) c.put(req, res.clone());
         return res;
       })
     );

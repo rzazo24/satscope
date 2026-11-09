@@ -1,0 +1,22 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//SatScope//Recordatorio//EN
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+BEGIN:VEVENT
+UID:satscope-semanal-en@satscope-seven.vercel.app
+DTSTAMP:20261109T120000Z
+DTSTART:20261116T090000
+DURATION:PT15M
+RRULE:FREQ=WEEKLY;BYDAY=MO
+SUMMARY:Check SatScope
+DESCRIPTION:This week's action on SatScope: https://satscope-seven.vercel.a
+ pp/ (the signal comes out after Sunday's weekly close).
+URL:https://satscope-seven.vercel.app/
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:PT0M
+DESCRIPTION:Time to check SatScope
+END:VALARM
+END:VEVENT
+END:VCALENDAR

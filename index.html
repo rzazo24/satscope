@@ -15,8 +15,21 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="SatScope">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<link rel="preload" href="/fonts/ibm-plex-sans.woff2" as="font" type="font/woff2" crossorigin>
+<meta property="og:type" content="website">
+<meta property="og:title" content="SatScope · DCA dinámico para Bitcoin">
+<meta property="og:description" content="Cada semana, una puntuación de 0 a 100 que te dice cuánto Bitcoin comprar, si esperar o si vender una parte.">
+<meta property="og:url" content="https://satscope-seven.vercel.app/">
+<meta property="og:image" content="https://satscope-seven.vercel.app/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="SatScope: panel de DCA dinámico para Bitcoin">
+<meta name="twitter:card" content="summary_large_image">
 <style>
+/* Fuentes IBM Plex servidas desde el propio sitio (licencia SIL OFL 1.1, ver fonts/OFL.txt) */
+@font-face{font-family:"IBM Plex Sans";font-style:normal;font-weight:400 600;font-display:swap;src:url(/fonts/ibm-plex-sans.woff2) format("woff2")}
+@font-face{font-family:"IBM Plex Mono";font-style:normal;font-weight:400;font-display:swap;src:url(/fonts/ibm-plex-mono-400.woff2) format("woff2")}
+@font-face{font-family:"IBM Plex Mono";font-style:normal;font-weight:600;font-display:swap;src:url(/fonts/ibm-plex-mono-600.woff2) format("woff2")}
 /* Layout: panel de una columna — acción de la semana arriba, indicadores, histórico de puntuación, ajustes plegados */
 :root{
   --bg:#f6f5f1;--panel:#ffffff;--fg:#1d1c19;--muted:#6d6a60;--line:#e2dfd5;
@@ -142,8 +155,9 @@ try{const t=localStorage.getItem('theme');if(t==='light'||t==='dark')document.do
         <span class="pill" id="pill">–</span>
         <div class="action" id="action" data-i18n="calc"></div>
         <div class="sub" id="hint"></div>
-        <div class="done" id="done"></div>
+        <div class="sub" id="eur" hidden></div>
         <div class="sub" id="price"></div>
+        <div class="done" id="done"></div>
       </div>
     </div>
     <div class="bar"><i id="mark" style="left:50%"></i></div>
@@ -157,7 +171,7 @@ try{const t=localStorage.getItem('theme');if(t==='light'||t==='dark')document.do
 
   <section>
     <h2 data-i18n="hist"></h2>
-    <canvas id="chart"></canvas>
+    <canvas id="chart" role="img"></canvas>
     <p class="note" data-i18n="histNote"></p>
   </section>
 
@@ -180,6 +194,7 @@ try{const t=localStorage.getItem('theme');if(t==='light'||t==='dark')document.do
       <p class="note" data-i18n="addNote"></p>
     </details>
     <div class="row">
+      <a class="btn" id="icsBtn" href="/recordatorio.ics" data-i18n="ics" style="text-decoration:none;display:inline-flex;align-items:center"></a>
       <button type="button" class="btn" id="expBtn" data-i18n="exp"></button>
       <button type="button" class="btn" id="impBtn" data-i18n="imp"></button>
       <input type="file" id="impFile" accept=".csv,text/csv" hidden>
@@ -192,7 +207,7 @@ try{const t=localStorage.getItem('theme');if(t==='light'||t==='dark')document.do
     <div class="bt-head"><h2 data-i18n="bt"></h2><label><span data-i18n="btFrom"></span><select id="btFrom"></select></label></div>
     <table class="tbl" id="btTbl"></table>
     <div class="legend"><span><i style="background:var(--accent)"></i><span data-i18n="btDyn"></span></span><span><i style="background:var(--muted)"></i><span data-i18n="btDca"></span></span></div>
-    <canvas id="btChart"></canvas>
+    <canvas id="btChart" role="img"></canvas>
     <p class="note" data-i18n="btNote"></p>
   </section>
 
@@ -214,6 +229,7 @@ try{const t=localStorage.getItem('theme');if(t==='light'||t==='dark')document.do
         <label><span data-i18n="lSellPct"></span><input type="number" id="sellPct" value="2" step="0.5"></label>
         <label><span data-i18n="lReuse"></span><input type="number" id="reuseBelow" value="20"></label>
       </div>
+      <label style="display:flex;align-items:center;gap:8px;margin-top:12px;font-size:.85rem"><input type="checkbox" id="showEur" style="width:auto"> <span data-i18n="lEur"></span></label>
       <p class="note" style="margin-top:10px" data-i18n="saved"></p>
     </details>
   </section>
@@ -251,7 +267,10 @@ const I18N={
     price:p=>`BTC ahora a ${p} $`,wk:(d,n)=>`Señal con el cierre semanal del ${d} · la siguiente, tras el cierre del ${n}`,wkSnap:d=>`Señal con los datos guardados del ${d}`,
     bt:'Backtest',btFrom:'Desde',btDyn:'Tu estrategia',btDca:'DCA fijo',rInv:'Invertido',rBtc:'BTC acumulado',rSold:'Reserva en efectivo',rVal:'Valor hoy',rRet:'Rentabilidad',rAvg:'Precio medio de compra',
     btNote:'Simulación semanal con los ajustes de abajo. Lo vendido se guarda como reserva y se usa para comprar el doble cuando la puntuación baja del umbral de reserva. DCA fijo: la aportación base todas las semanas. Sin comisiones. Valor hoy = BTC × último cierre semanal + reserva sin usar.',
-    lReuse:'Usar reserva por debajo de',
+    lReuse:'Usar reserva por debajo de',lEur:'Mostrar equivalencia en euros',
+    eurP:e=>`(≈ ${e} €)`,eurA:(e,r)=>`Equivale a ≈ ${e} € (1 € = ${r} $)`,ics:'Recordatorio semanal',
+    chartAria:(mn,mx,last,sell)=>`Gráfico de la puntuación de las últimas 104 semanas: mínima ${mn}, máxima ${mx}, actual ${last}. Umbral de venta: ${sell}.`,
+    btAria:(f,to,a,b)=>`Gráfico del valor de la cartera de ${f} a ${to}: tu estrategia termina en ${a} y el DCA fijo en ${b}.`,
     aSellBtc:(b,u)=>`Vende ${b} BTC esta semana (≈ ${u})`,
     markDone:'Marcar como hecha',save:'Guardar',cancel:'Cancelar',undo:'Deshacer',
     fUsdBuy:'Importe pagado ($)',fBtcBuy:'BTC recibido',fBtcSell:'BTC vendido',fUsdSell:'Recibido ($)',
@@ -279,7 +298,10 @@ const I18N={
     price:p=>`BTC now at $${p}`,wk:(d,n)=>`Signal from the weekly close of ${d} · next one after the close of ${n}`,wkSnap:d=>`Signal from saved data of ${d}`,
     bt:'Backtest',btFrom:'From',btDyn:'Your strategy',btDca:'Fixed DCA',rInv:'Invested',rBtc:'BTC accumulated',rSold:'Cash reserve',rVal:'Value today',rRet:'Return',rAvg:'Average buy price',
     btNote:'Weekly simulation with the settings below. Sale proceeds are kept as a reserve and used to buy double when the score drops below the reserve threshold. Fixed DCA: the base amount every week. No fees. Value today = BTC × last weekly close + unused reserve.',
-    lReuse:'Use reserve below score',
+    lReuse:'Use reserve below score',lEur:'Show euro equivalent',
+    eurP:e=>`(≈ €${e})`,eurA:(e,r)=>`That's about €${e} (€1 = $${r})`,ics:'Weekly reminder',
+    chartAria:(mn,mx,last,sell)=>`Chart of the score over the last 104 weeks: low ${mn}, high ${mx}, current ${last}. Sell threshold: ${sell}.`,
+    btAria:(f,to,a,b)=>`Chart of portfolio value from ${f} to ${to}: your strategy ends at ${a} and fixed DCA at ${b}.`,
     aSellBtc:(b,u)=>`Sell ${b} BTC this week (≈ ${u})`,
     markDone:'Mark as done',save:'Save',cancel:'Cancel',undo:'Undo',
     fUsdBuy:'Amount paid ($)',fBtcBuy:'BTC received',fBtcSell:'BTC sold',fUsdSell:'Received ($)',
@@ -311,6 +333,7 @@ function applyLang(){
   document.querySelectorAll('[data-i18n]').forEach(el=>el.textContent=t[el.dataset.i18n]);
   document.querySelectorAll('[data-i18n-aria]').forEach(el=>el.setAttribute('aria-label',t[el.dataset.i18nAria]));
   document.querySelectorAll('#langSeg button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.lang===LANG));
+  $('icsBtn').href=LANG==='es'?'/recordatorio.ics':'/reminder.ics';
   $('src').textContent=SRC==='live'?t.live(LIVE.src,LIVE.fng):SRC==='snap'?t.snap(SNAP_END):t.loading;
   render();
 }
@@ -437,7 +460,16 @@ function backtest(rows,c){
   return {S,D,vals};
 }
 
-let ROWS=null,HIST=null,NOW=null;
+let ROWS=null,HIST=null,NOW=null,EURX=null; // EURX: dólares por euro
+const showEur=()=>$('showEur').checked;
+try{$('showEur').checked=localStorage.getItem('eur')!=='0'}catch(e){$('showEur').checked=true}
+$('showEur').addEventListener('change',()=>{try{localStorage.setItem('eur',showEur()?'1':'0')}catch(e){}render()});
+// Cambio euro-dólar (solo para mostrar equivalencias; la estrategia y el registro van en dólares)
+async function fx(){
+  try{return +(await getJSON('https://api.binance.com/api/v3/ticker/price?symbol=EURUSDT')).price}catch(e){}
+  try{return +(await getJSON('https://www.bitstamp.net/api/v2/ticker/eurusd/')).last}catch(e){}
+  return null;
+}
 
 // Registro de operaciones: se guarda solo en este navegador.
 // buy: usd = total pagado, res = parte pagada con la reserva · sell: usd = recibido · res: ajuste de la reserva
@@ -488,7 +520,7 @@ function render(){
   const band=Math.min(4,Math.floor(sc/20)),mult=c['m'+band],sell=sc>=c.sellAt;
   $('score').innerHTML=`${fmt(sc)}<small>/100</small>`;
   $('mark').style.left=sc+'%';
-  const pill=$('pill'),t=T();
+  const pill=$('pill'),t=T(),ev=EURX&&showEur();
   let hint='';const LS=ledgerStats();CUR={kind:'hold',t:r.t};
   if(sell){
     pill.textContent=t.sell;pill.style.background='var(--sell)';
@@ -505,8 +537,10 @@ function render(){
   }
   else{pill.textContent=t.hold;pill.style.background='var(--hold)';$('action').textContent=t.aHold}
   $('hint').textContent=hint;$('hint').hidden=!hint;
+  const amt=CUR.kind==='buy'||CUR.kind==='sell'?CUR.usd:0;
+  $('eur').hidden=!(ev&&amt>0);if(ev&&amt>0)$('eur').textContent=t.eurA(fmt(amt/EURX,2),fmt(EURX,4));
   renderDone();renderPf(c,LS);
-  $('price').innerHTML=`${t.price(fmt(NOW))}<br>${SRC==='live'?t.wk(fdate(r.t),fdate(r.t,7)):t.wkSnap(fdate(r.t))}`;
+  $('price').innerHTML=`${t.price(fmt(NOW))}${ev?' '+t.eurP(fmt(NOW/EURX)):''}<br>${SRC==='live'?t.wk(fdate(r.t),fdate(r.t,7)):t.wkSnap(fdate(r.t))}`;
   const I=[[t.iF,r.fng==null?'–':fmt(r.fng),p.f,c.wF],[t.iD,'−'+fmt(r.dd)+(LANG==='es'?' %':'%'),p.d,c.wD],[t.iW,fmt(r.w200,2)+'×',p.w,c.wW],[t.iR,fmt(r.rsi),p.r,c.wR]];
   $('inds').innerHTML=I.map(([n,v,s,w])=>`<div class="ind"><span class="n">${n} · ${t.weight} ${fmt(w)}</span><span class="v">${v}</span><div class="mini"><b style="width:${s??0}%"></b></div><span class="n">${t.adds} ${s==null?'–':fmt(s)} / 100</span></div>`).join('');
   draw(ROWS.slice(-104).map(x=>score(x,c)),c);
@@ -604,6 +638,7 @@ function drawBt(v,from,to){
   for(const f of[0,.5,1]){const val=max*f/1.05;g.beginPath();g.moveTo(L,y(val));g.lineTo(L+w,y(val));g.stroke();g.fillText(val>=1000?fmt(val/1000,1)+'k':fmt(val),L-4,y(val)+3)}
   g.textAlign='left';g.fillText(from.slice(0,7),L,H-4);g.textAlign='right';g.fillText(to.slice(0,7),L+w,H-4);
   for(const[k,c,lw]of[[1,'--muted',1.5],[0,'--accent',2]]){g.strokeStyle=col(c);g.lineWidth=lw;g.beginPath();v.forEach((p,i)=>i?g.lineTo(x(i),y(p[k])):g.moveTo(x(i),y(p[k])));g.stroke()}
+  cv.setAttribute('aria-label',I18N[LANG].btAria(from.slice(0,7),to.slice(0,7),usd(v.at(-1)[0]),usd(v.at(-1)[1])));
 }
 $('btFrom').addEventListener('change',()=>{try{localStorage.setItem('btFrom',$('btFrom').value)}catch(e){}render()});
 function draw(s,c){
@@ -618,12 +653,14 @@ function draw(s,c){
   g.setLineDash([4,4]);g.strokeStyle=col('--sell');g.beginPath();g.moveTo(L,y(c.sellAt));g.lineTo(L+w,y(c.sellAt));g.stroke();g.setLineDash([]);
   g.strokeStyle=col('--accent');g.lineWidth=2;g.beginPath();s.forEach((v,i)=>i?g.lineTo(x(i),y(v)):g.moveTo(x(i),y(v)));g.stroke();
   g.fillStyle=col('--accent');g.beginPath();g.arc(x(s.length-1),y(s.at(-1)),4,0,7);g.fill();
+  const ok=s.filter(v=>v!=null);cv.setAttribute('aria-label',I18N[LANG].chartAria(fmt(Math.min(...ok)),fmt(Math.max(...ok)),fmt(s.at(-1)),fmt(c.sellAt)));
 }
 for(const k of IDS)$(k).addEventListener('input',render);
 addEventListener('resize',render);
 let savedTheme=null;try{savedTheme=localStorage.getItem('theme')}catch(e){}
 applyTheme(savedTheme);applyLang();
 (async()=>{
+  fx().then(r=>{if(r>0){EURX=r;render()}});
   try{const L=await live();ROWS=L.rows;NOW=L.now;SRC='live';LIVE={src:L.src,fng:L.fng};
     // Backtest: la instantánea cubre desde 2018 y los datos en directo, las semanas recientes
     HIST=[...SNAP.filter(r=>r.t<ROWS[0].t),...ROWS]}

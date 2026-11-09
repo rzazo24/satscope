@@ -49,6 +49,9 @@ Pesos, multiplicadores, aportación y umbral de venta se pueden cambiar en «Aju
 - **Registro de operaciones:** marca la acción de la semana como hecha o añade operaciones a mano. La app calcula tu BTC, lo aportado, el valor, la rentabilidad, el precio medio, la reserva de ventas y las semanas saltadas, y con ello te dice cuánto BTC vender exactamente y cuánta reserva usar. Se guarda solo en tu navegador; puedes exportarlo e importarlo en CSV.
 - **Backtest** desde el año que elijas: tu estrategia frente a un DCA fijo (invertido, BTC acumulado, ventas, valor, rentabilidad y precio medio).
 - Tema claro, oscuro o automático.
+- Equivalencia en euros de la acción y del precio (opcional). La estrategia y el registro van en dólares, porque las compras se hacen en dólares (USDC) en Polygon.
+- Recordatorio semanal para tu calendario (.ics), cada lunes a las 9:00.
+- Fuentes servidas desde el propio sitio: no se contacta con Google y la app funciona del todo sin conexión.
 - Instalable como app (PWA): funciona sin conexión y avisa cuando hay una versión nueva.
 - Analítica de visitas con [Vercel Web Analytics](https://vercel.com/docs/analytics): sin cookies y sin datos personales.
 
@@ -60,6 +63,16 @@ Abre `index.html` en el navegador, o sirve la carpeta:
 python3 -m http.server 8000
 ```
 
+## Tests
+
+La lógica (RSI de Wilder, indicadores, puntuación, backtest e instantánea) tiene tests que se cargan directamente de `index.html`:
+
+```bash
+node --test
+```
+
+Se ejecutan también en GitHub Actions con cada push.
+
 ## Despliegue
 
 Está en Vercel como sitio estático y cada push a `main` se publica solo. La analítica solo funciona en Vercel.
@@ -70,4 +83,4 @@ Herramienta de análisis basada en datos históricos. **No es asesoramiento fina
 
 ## Licencia
 
-[MIT](LICENSE)
+[MIT](LICENSE). Las fuentes IBM Plex se distribuyen con la licencia [SIL Open Font License 1.1](fonts/OFL.txt).

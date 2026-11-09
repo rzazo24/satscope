@@ -1,0 +1,22 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//SatScope//Recordatorio//ES
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+BEGIN:VEVENT
+UID:satscope-semanal-es@satscope-seven.vercel.app
+DTSTAMP:20261109T120000Z
+DTSTART:20261116T090000
+DURATION:PT15M
+RRULE:FREQ=WEEKLY;BYDAY=MO
+SUMMARY:Revisar SatScope
+DESCRIPTION:Acción de la semana en SatScope: https://satscope-seven.vercel
+ .app/ (la señal sale tras el cierre semanal del domingo).
+URL:https://satscope-seven.vercel.app/
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:PT0M
+DESCRIPTION:Toca revisar SatScope
+END:VALARM
+END:VEVENT
+END:VCALENDAR
