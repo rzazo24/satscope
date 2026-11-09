@@ -42,6 +42,7 @@ Pesos, multiplicadores, aportación y umbral de venta se pueden cambiar en «Aju
 
 - Español e inglés.
 - Tema claro, oscuro o automático.
+- Instalable como app (PWA): funciona sin conexión y avisa cuando hay una versión nueva.
 - Analítica de visitas con [Vercel Web Analytics](https://vercel.com/docs/analytics): sin cookies y sin datos personales.
 
 ## Uso local

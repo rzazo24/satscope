@@ -1,4 +1,6 @@
 {
+  "buildCommand": "rm -rf public && mkdir public && cp -r index.html manifest.webmanifest icons public/ && sed \"s/__BUILD__/${VERCEL_GIT_COMMIT_SHA:-$(date +%s)}/\" sw.js > public/sw.js",
+  "outputDirectory": "public",
   "headers": [
     {
       "source": "/sw.js",

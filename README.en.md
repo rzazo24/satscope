@@ -42,6 +42,7 @@ You can change the weights, multipliers, base amount and sell threshold under "S
 
 - Spanish and English.
 - Light, dark or automatic theme.
+- Installable as an app (PWA): works offline and lets you know when a new version is out.
 - Visit analytics with [Vercel Web Analytics](https://vercel.com/docs/analytics): no cookies and no personal data.
 
 ## Running locally
