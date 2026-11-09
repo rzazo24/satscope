@@ -55,11 +55,14 @@ before(async () => {
   profile = mkdtempSync(join(tmpdir(), 'satscope-e2e-'));
   chrome = spawn(CHROME, ['--headless=new', '--no-sandbox', '--disable-gpu', '--no-first-run', '--remote-debugging-port=0',
     `--user-data-dir=${profile}`, 'about:blank'], { stdio: 'ignore' });
-  let port;
-  for (let i = 0; i < 100 && !port; i++) {
+  // Chrome escribe el puerto en DevToolsActivePort al arrancar; en GitHub Actions puede tardar varios segundos
+  let port, exited = false;
+  chrome.on('exit', () => { exited = true; });
+  for (let i = 0; i < 300 && !port && !exited; i++) {
     await wait(100);
-    try { port = readFileSync(join(profile, 'DevToolsActivePort'), 'utf8').split('\n')[0]; } catch {}
+    try { port = readFileSync(join(profile, 'DevToolsActivePort'), 'utf8').split('\n')[0].trim() || undefined; } catch {}
   }
+  if (!port) throw new Error(exited ? 'Chrome se cerró al arrancar' : 'Chrome no arrancó en 30 s');
   const { webSocketDebuggerUrl } = await (await fetch(`http://127.0.0.1:${port}/json/version`)).json();
   cdp = await connect(webSocketDebuggerUrl);
 });
