@@ -38,7 +38,10 @@ You can change the weights, multipliers, base amount and sell threshold under "S
 ## Data
 
 - **Live:** daily BTCUSDT candles from [Binance](https://www.binance.com) (3 calls of 1,000 days) and the Fear & Greed index from [alternative.me](https://alternative.me/crypto/fear-and-greed-index/). Your browser makes these calls.
-- **Fallback:** if either API fails, the page uses a built-in weekly snapshot (Bitstamp prices, from February 2018 to 9 November 2026).
+- **Price fallback:** if Binance fails, daily candles come from [Bitstamp](https://www.bitstamp.net). Over the last 104 weeks the score differs by less than 0.2 points between the two.
+- **Fear & Greed fallback:** if alternative.me fails, the snapshot's weekly values are used; if they don't cover the week, the score is worked out without that indicator and the app says so.
+- **Built-in snapshot:** if no price source works, the page uses a weekly snapshot (Bitstamp prices, from February 2018 to 9 November 2026).
+- Each call times out after 10 seconds, so a hanging API doesn't block the app.
 
 ## Other features
 

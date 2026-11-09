@@ -240,7 +240,7 @@ const clamp=v=>Math.max(0,Math.min(100,v));
 
 // Idioma
 const I18N={
-  es:{loc:'es-ES',desc:'Panel de DCA dinámico para Bitcoin',loading:'Cargando…',live:'Datos en directo · Binance + alternative.me',snap:d=>`Sin conexión a las APIs · datos guardados del ${d}`,
+  es:{loc:'es-ES',desc:'Panel de DCA dinámico para Bitcoin',loading:'Cargando…',live:(s,f)=>`Datos en directo · ${s}${f==='live'?' + alternative.me':f==='snap'?' · Fear & Greed no disponible: se usan los valores guardados':' · Fear & Greed no disponible: la puntuación se calcula sin él'}`,snap:d=>`Sin conexión a las APIs · datos guardados del ${d}`,
     theme:'Tema',install:'Instalar app',updMsg:'Hay una nueva versión de SatScope.',updGo:'Actualizar',updLater:'Más tarde',tAuto:'Auto',tLight:'Claro',tDark:'Oscuro',calc:'Calculando la acción de esta semana…',tick0:'0 miedo',tick100:'100 euforia',
     inds:'Indicadores',hist:'Puntuación de las últimas 104 semanas',histNote:'Línea discontinua: umbral de venta. Zona verde: tramos con compra.',
     settings:'Ajustes de la estrategia',lBase:'Aportación base ($)',lWF:'Peso Fear & Greed',lWD:'Peso caída desde máximo',lWW:'Peso MA200 semanas',lWR:'Peso RSI semanal',
@@ -268,7 +268,7 @@ const I18N={
     hResEmpty:'Miedo extremo: si tuvieras reserva de ventas, esta semana se usaría para comprar el doble.',
     hSell:'Lo que cobres pasa a tu reserva de ventas y se usará para comprar más en las semanas de miedo extremo.',
     iF:'Fear & Greed',iD:'Caída desde máximo',iW:'Precio / MA200 semanas',iR:'RSI semanal',weight:'peso',adds:'Aporta'},
-  en:{loc:'en-US',desc:'Dynamic DCA dashboard for Bitcoin',loading:'Loading…',live:'Live data · Binance + alternative.me',snap:d=>`APIs unreachable · saved data from ${d}`,
+  en:{loc:'en-US',desc:'Dynamic DCA dashboard for Bitcoin',loading:'Loading…',live:(s,f)=>`Live data · ${s}${f==='live'?' + alternative.me':f==='snap'?' · Fear & Greed unavailable: using saved values':' · Fear & Greed unavailable: the score is worked out without it'}`,snap:d=>`APIs unreachable · saved data from ${d}`,
     theme:'Theme',install:'Install app',updMsg:'A new version of SatScope is available.',updGo:'Update',updLater:'Later',tAuto:'Auto',tLight:'Light',tDark:'Dark',calc:'Working out this week’s action…',tick0:'0 fear',tick100:'100 greed',
     inds:'Indicators',hist:'Score over the last 104 weeks',histNote:'Dashed line: sell threshold. Green zone: bands that buy.',
     settings:'Strategy settings',lBase:'Base amount ($)',lWF:'Fear & Greed weight',lWD:'Drawdown from ATH weight',lWW:'200-week MA weight',lWR:'Weekly RSI weight',
@@ -304,14 +304,14 @@ const fmt=(v,d=0)=>v.toLocaleString(T().loc,{maximumFractionDigits:d,minimumFrac
 const usd=(v,d=0)=>LANG==='es'?`${fmt(v,d)} $`:(v<0?'−$'+fmt(-v,d):'$'+fmt(v,d));
 const pct=v=>(v>0?'+':'')+fmt(v)+(LANG==='es'?' %':'%');
 const fdate=(iso,add=0)=>new Date(Date.parse(iso)+add*864e5).toLocaleDateString(T().loc,{day:'numeric',month:'short',year:'numeric',timeZone:'UTC'});
-let SRC='loading';
+let SRC='loading',LIVE={src:'',fng:'live'};
 function applyLang(){
   const t=T();document.documentElement.lang=LANG;
   document.querySelector('meta[name="description"]').content=t.desc;
   document.querySelectorAll('[data-i18n]').forEach(el=>el.textContent=t[el.dataset.i18n]);
   document.querySelectorAll('[data-i18n-aria]').forEach(el=>el.setAttribute('aria-label',t[el.dataset.i18nAria]));
   document.querySelectorAll('#langSeg button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.lang===LANG));
-  $('src').textContent=SRC==='live'?t.live:SRC==='snap'?t.snap(SNAP_END):t.loading;
+  $('src').textContent=SRC==='live'?t.live(LIVE.src,LIVE.fng):SRC==='snap'?t.snap(SNAP_END):t.loading;
   render();
 }
 $('langSeg').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;LANG=b.dataset.lang;try{localStorage.setItem('lang',LANG)}catch(_){}applyLang()});
@@ -365,23 +365,49 @@ function wilder(p,n=14){
 function parts(r){return{f:r.fng,d:clamp((1-r.dd/80)*100),w:clamp(Math.log(r.w200)/Math.log(5)*100),r:r.rsi}}
 function score(r,c){const p=parts(r);const L=[[p.f,c.wF],[p.d,c.wD],[p.w,c.wW],[p.r,c.wR]].filter(x=>x[0]!=null&&x[1]>0);let a=0,b=0;for(const[v,w]of L){a+=v*w;b+=w}return b?a/b:null}
 
-// Datos en directo: Binance (velas diarias) + alternative.me (Fear & Greed, histórico completo).
+// Datos en directo: velas diarias de Binance (o de Bitstamp si Binance falla) + Fear & Greed de alternative.me.
 // La señal usa solo semanas cerradas: el cierre semanal es el cierre del domingo en UTC,
 // igual que la vela semanal de Binance. Así la acción no cambia a lo largo de la semana.
-async function live(){
+const getJSON=async u=>{const r=await fetch(u,{signal:AbortSignal.timeout(10000)});if(!r.ok)throw new Error(u+' '+r.status);return r.json()};
+// Cada fuente devuelve velas {t: apertura en ms, c: cierre, e: hora de cierre en ms}, de la más antigua a la más reciente
+async function binance(){
   const k=[];let end=Date.now();
   for(let n=0;n<3;n++){
-    const r=await fetch(`https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1d&limit=1000&endTime=${end}`);
-    if(!r.ok)throw new Error('binance');const a=await r.json();if(!a.length)break;
-    k.unshift(...a);end=a[0][0]-1;
+    const a=await getJSON(`https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1d&limit=1000&endTime=${end}`);if(!a.length)break;
+    k.unshift(...a.map(x=>({t:x[0],c:+x[4],e:x[6]})));end=a[0][0]-1;
   }
-  const now=+k.at(-1)[4];
-  while(k.length&&+k.at(-1)[6]>Date.now())k.pop(); // descarta la vela de hoy, aún abierta
-  const f=await (await fetch('https://api.alternative.me/fng/?limit=0')).json();
-  const fm=new Map(f.data.map(x=>[new Date(+x.timestamp*1000).toISOString().slice(0,10),+x.value]));
+  return k;
+}
+async function bitstamp(){
+  const k=[];let end=Math.floor(Date.now()/1000);
+  for(let n=0;n<3;n++){
+    const a=(await getJSON(`https://www.bitstamp.net/api/v2/ohlc/btcusd/?step=86400&limit=1000&end=${end}`)).data.ohlc;if(!a.length)break;
+    k.unshift(...a.map(x=>({t:+x.timestamp*1000,c:+x.close,e:+x.timestamp*1000+864e5-1})));end=+a[0].timestamp-1;
+  }
+  return k;
+}
+const SOURCES=[['Binance',binance],['Bitstamp',bitstamp]];
+async function live(){
+  let k=null,src=null;
+  for(const[name,f]of SOURCES){try{const a=await f();if(a.length>=1600){k=a;src=name;break}}catch(e){}}
+  if(!k)throw new Error('sin precios');
+  const now=k.at(-1).c;
+  while(k.length&&k.at(-1).e>Date.now())k.pop(); // descarta la vela de hoy, aún abierta
+  // Si Fear & Greed falla, se siguen usando los precios en directo y Fear & Greed sale de la instantánea
+  // (el valor semanal guardado más cercano, a 3 días como mucho). Si no hay, la puntuación se calcula sin él.
+  let fm=null,fngSrc='live';
+  try{const f=await getJSON('https://api.alternative.me/fng/?limit=0');fm=new Map(f.data.map(x=>[new Date(+x.timestamp*1000).toISOString().slice(0,10),+x.value]))}catch(e){}
+  if(!fm){
+    fngSrc='snap';const sf=new Map(SNAP.filter(r=>r.fng!=null).map(r=>[r.t,r.fng]));
+    const near=t=>{for(const k of[0,1,-1,2,-2,3,-3]){const v=sf.get(new Date(Date.parse(t)+k*864e5).toISOString().slice(0,10));if(v!=null)return v}return null};
+    fm={get:near};
+  }
   // Cierres de los domingos, con el máximo histórico hasta ese día
-  const W=[];let m=0;
-  for(const x of k){const c=+x[4];m=Math.max(m,c);if(new Date(x[0]).getUTCDay()===0)W.push({t:new Date(x[0]).toISOString().slice(0,10),p:c,ath:m})}
+  const W=[];let m=0,last=null;
+  for(const x of k){
+    if(last!=null&&x.t<=last)continue;last=x.t; // por si una página repite velas
+    m=Math.max(m,x.c);if(new Date(x.t).getUTCDay()===0)W.push({t:new Date(x.t).toISOString().slice(0,10),p:x.c,ath:m});
+  }
   const rs=wilder(W.map(w=>w.p));
   const rows=[];let sum=0;
   for(let i=0;i<W.length;i++){
@@ -389,7 +415,8 @@ async function live(){
     rows.push({t:W[i].t,p:W[i].p,w200:W[i].p/(sum/200),rsi:rs[i],fng:fm.get(W[i].t)??null,dd:(1-W[i].p/W[i].ath)*100});
   }
   if(rows.length<10)throw new Error('pocos datos');
-  return {rows,now};
+  if(fngSrc==='snap'&&rows.at(-1).fng==null)fngSrc='none';
+  return {rows,now,src,fng:fngSrc};
 }
 
 // Backtest semanal: tu estrategia frente a un DCA fijo con la aportación base
@@ -480,7 +507,7 @@ function render(){
   $('hint').textContent=hint;$('hint').hidden=!hint;
   renderDone();renderPf(c,LS);
   $('price').innerHTML=`${t.price(fmt(NOW))}<br>${SRC==='live'?t.wk(fdate(r.t),fdate(r.t,7)):t.wkSnap(fdate(r.t))}`;
-  const I=[[t.iF,fmt(r.fng??0),p.f,c.wF],[t.iD,'−'+fmt(r.dd)+(LANG==='es'?' %':'%'),p.d,c.wD],[t.iW,fmt(r.w200,2)+'×',p.w,c.wW],[t.iR,fmt(r.rsi),p.r,c.wR]];
+  const I=[[t.iF,r.fng==null?'–':fmt(r.fng),p.f,c.wF],[t.iD,'−'+fmt(r.dd)+(LANG==='es'?' %':'%'),p.d,c.wD],[t.iW,fmt(r.w200,2)+'×',p.w,c.wW],[t.iR,fmt(r.rsi),p.r,c.wR]];
   $('inds').innerHTML=I.map(([n,v,s,w])=>`<div class="ind"><span class="n">${n} · ${t.weight} ${fmt(w)}</span><span class="v">${v}</span><div class="mini"><b style="width:${s??0}%"></b></div><span class="n">${t.adds} ${s==null?'–':fmt(s)} / 100</span></div>`).join('');
   draw(ROWS.slice(-104).map(x=>score(x,c)),c);
   renderBt(c);
@@ -597,7 +624,7 @@ addEventListener('resize',render);
 let savedTheme=null;try{savedTheme=localStorage.getItem('theme')}catch(e){}
 applyTheme(savedTheme);applyLang();
 (async()=>{
-  try{const L=await live();ROWS=L.rows;NOW=L.now;SRC='live';
+  try{const L=await live();ROWS=L.rows;NOW=L.now;SRC='live';LIVE={src:L.src,fng:L.fng};
     // Backtest: la instantánea cubre desde 2018 y los datos en directo, las semanas recientes
     HIST=[...SNAP.filter(r=>r.t<ROWS[0].t),...ROWS]}
   catch(e){ROWS=SNAP;HIST=SNAP;NOW=SNAP.at(-1).p;SRC='snap'}

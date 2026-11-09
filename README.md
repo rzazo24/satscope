@@ -38,7 +38,10 @@ Pesos, multiplicadores, aportación y umbral de venta se pueden cambiar en «Aju
 ## Datos
 
 - **En directo:** velas diarias BTCUSDT de [Binance](https://www.binance.com) (3 llamadas de 1000 días) y el índice Fear & Greed de [alternative.me](https://alternative.me/crypto/fear-and-greed-index/). Las llamadas las hace tu navegador.
-- **Respaldo:** si alguna API falla, se usa una instantánea semanal integrada (precios de Bitstamp, desde febrero de 2018 hasta el 9 de noviembre de 2026).
+- **Respaldo de precios:** si Binance falla, las velas diarias se piden a [Bitstamp](https://www.bitstamp.net). En las últimas 104 semanas la puntuación con una u otra fuente difiere menos de 0,2 puntos.
+- **Respaldo de Fear & Greed:** si alternative.me falla, se usan los valores semanales de la instantánea; si no cubren la semana, la puntuación se calcula sin ese indicador y la app lo avisa.
+- **Instantánea integrada:** si no hay ninguna fuente de precios, se usa una instantánea semanal (precios de Bitstamp, desde febrero de 2018 hasta el 9 de noviembre de 2026).
+- Cada llamada tiene un límite de 10 segundos, para que una API colgada no bloquee la app.
 
 ## Otras funciones
 
