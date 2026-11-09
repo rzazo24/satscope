@@ -25,7 +25,7 @@ The signal only uses **closed weeks**: the weekly close is Sunday's close in UTC
 
 ### Weekly rules
 
-On a base amount of **$5**, by 20-point band:
+On a base amount of **$10**, by 20-point band:
 
 | Score | 0–20 | 20–40 | 40–60 | 60–80 | 80–100 |
 |---|---|---|---|---|---|

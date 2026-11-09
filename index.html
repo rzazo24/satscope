@@ -145,7 +145,7 @@ try{const t=localStorage.getItem('theme');if(t==='light'||t==='dark')document.do
     <details>
       <summary data-i18n="settings"></summary>
       <div class="grid2">
-        <label><span data-i18n="lBase"></span><input type="number" id="base" value="5" min="0" step="0.5"></label>
+        <label><span data-i18n="lBase"></span><input type="number" id="base" value="10" min="0" step="0.5"></label>
         <label><span data-i18n="lWF"></span><input type="number" id="wF" value="30"></label>
         <label><span data-i18n="lWD"></span><input type="number" id="wD" value="40"></label>
         <label><span data-i18n="lWW"></span><input type="number" id="wW" value="15"></label>
@@ -167,7 +167,16 @@ try{const t=localStorage.getItem('theme');if(t==='light'||t==='dark')document.do
 <script>
 const $=id=>document.getElementById(id);
 const IDS=['base','wF','wD','wW','wR','m0','m1','m2','m3','m4','sellAt','sellPct'];
-try{const s=JSON.parse(localStorage.getItem('dcaCfg')||'{}');for(const k of IDS)if(s[k]!=null)$(k).value=s[k]}catch(e){}
+// Ajustes: solo se guarda lo que el usuario cambia, así los valores por defecto nuevos llegan a todos
+const DEF=Object.fromEntries(IDS.map(k=>[k,+$(k).value]));
+try{
+  // Migración: la versión anterior guardaba todos los valores en 'dcaCfg'; se conserva solo lo que difería de sus valores por defecto
+  const old=localStorage.getItem('dcaCfg');
+  if(old!=null){const OLD={base:5,wF:30,wD:40,wW:15,wR:15,m0:5,m1:1,m2:0,m3:0,m4:0,sellAt:75,sellPct:5},o=JSON.parse(old),keep={};
+    for(const k of IDS)if(o[k]!=null&&+o[k]!==OLD[k])keep[k]=+o[k];
+    localStorage.setItem('cfg',JSON.stringify(keep));localStorage.removeItem('dcaCfg')}
+  const sv=JSON.parse(localStorage.getItem('cfg')||'{}');for(const k of IDS)if(sv[k]!=null)$(k).value=sv[k];
+}catch(e){}
 const cfg=()=>Object.fromEntries(IDS.map(k=>[k,+$(k).value]));
 const clamp=v=>Math.max(0,Math.min(100,v));
 
@@ -311,7 +320,7 @@ function backtest(rows,c){
 let ROWS=null,HIST=null,NOW=null;
 function render(){
   if(!ROWS)return;const c=cfg();
-  try{localStorage.setItem('dcaCfg',JSON.stringify(c))}catch(e){}
+  try{const d={};for(const k of IDS)if(c[k]!==DEF[k])d[k]=c[k];localStorage.setItem('cfg',JSON.stringify(d))}catch(e){}
   const r=ROWS.at(-1),sc=score(r,c),p=parts(r);
   const band=Math.min(4,Math.floor(sc/20)),mult=c['m'+band],sell=sc>=c.sellAt;
   $('score').innerHTML=`${fmt(sc)}<small>/100</small>`;

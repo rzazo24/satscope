@@ -25,7 +25,7 @@ La señal se calcula solo con **semanas cerradas**: el cierre semanal es el del 
 
 ### Reglas semanales
 
-Sobre una aportación base de **5 $**, según el tramo de 20 puntos:
+Sobre una aportación base de **10 $**, según el tramo de 20 puntos:
 
 | Puntuación | 0–20 | 20–40 | 40–60 | 60–80 | 80–100 |
 |---|---|---|---|---|---|
