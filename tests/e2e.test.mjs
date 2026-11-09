@@ -70,7 +70,7 @@ after(() => {
 });
 
 // Abre la página en un perfil limpio. `fail`: APIs caídas. `storage`: localStorage inicial.
-async function open({ fail = [], storage = null, width = 390 } = {}) {
+async function open({ fail = [], storage = {}, width = 390 } = {}) {
   const { browserContextId } = await cdp.send('Target.createBrowserContext');
   const { targetId } = await cdp.send('Target.createTarget', { url: 'about:blank', browserContextId });
   const { sessionId } = await cdp.send('Target.attachToTarget', { targetId, flatten: true });
@@ -105,11 +105,11 @@ async function open({ fail = [], storage = null, width = 390 } = {}) {
     }
     throw new Error('la página no terminó de cargar');
   };
-  if (storage) {
-    await s('Page.navigate', { url: base + 'manifest.webmanifest' }); // mismo origen, sin ejecutar la app
-    await wait(200);
-    await ev(`localStorage.clear();${Object.entries(storage).map(([k, v]) => `localStorage.setItem(${JSON.stringify(k)},${JSON.stringify(v)})`).join(';')}`);
-  }
+  // Idioma fijo (español) para no depender del idioma del Chrome de cada máquina
+  storage = { lang: 'es', ...storage };
+  await s('Page.navigate', { url: base + 'manifest.webmanifest' }); // mismo origen, sin ejecutar la app
+  await wait(200);
+  await ev(`localStorage.clear();${Object.entries(storage).map(([k, v]) => `localStorage.setItem(${JSON.stringify(k)},${JSON.stringify(v)})`).join(';')}`);
   await go();
   return { ev, go, errors, close: () => cdp.send('Target.disposeBrowserContext', { browserContextId }) };
 }
