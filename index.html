@@ -520,7 +520,7 @@ try{const t=localStorage.getItem('theme');if(t==='light'||t==='dark')document.do
 
   <section>
     <div class="bt-head"><h2><span data-i18n="bt"></span><button type="button" class="qh" data-help="backtest" data-i18n-aria="helpOn">?</button></h2><label><span data-i18n="btFrom"></span><select id="btFrom"></select></label></div>
-    <div class="bt-sum" id="btSum" role="status">
+    <div class="bt-sum" id="btSum">
       <span class="n" data-i18n="rVal"></span>
       <div><strong id="btDiffV"></strong> <span id="btDiffT"></span></div>
       <span class="n" id="btDiffSub"></span>
@@ -1082,8 +1082,9 @@ function renderBt(c){
   }
   const rows=HIST.filter(r=>r.t>=sel.value+'-01-01');if(rows.length<2)return;
   const {S,D,vals}=backtest(rows,c);
-  // Dato principal: diferencia de valor hoy (redondeada al dólar, igual que se muestra)
-  const {diff,inv}=btCompare(S,D),d=Math.round(diff),di=Math.round(inv);
+  // Dato principal: diferencia de valor hoy. Se redondea cada columna antes de restar, para que la cifra
+  // coincida siempre con la resta de los importes que muestra la tabla (redondear la diferencia podía dar 1 $ de más o de menos)
+  const {diff:d,inv:di}=btCompare({val:Math.round(S.val),inv:Math.round(S.inv)},{val:Math.round(D.val),inv:Math.round(D.inv)});
   // Espacio fino irrompible entre la cifra y el símbolo: con la letra grande, el espacio normal se ve demasiado ancho
   $('btDiffV').textContent=(d>0?'+'+usd(d):usd(Math.abs(d))).replace(' ','\u202f');
   $('btDiffV').className=d>0?'up':d<0?'down':'';

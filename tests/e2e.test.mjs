@@ -426,13 +426,13 @@ async function expectedBt(cfg = DEF) {
   const HIST = [...SNAP.filter(r => r.t < rows[0].t), ...rows];
   const from = HIST[0].t.slice(0, 4) + '-01-01';
   const { S, D } = env.get('backtest')(HIST.filter(r => r.t >= from), cfg);
-  return env.get('btCompare')(S, D);
+  const R = o => ({ val: Math.round(o.val), inv: Math.round(o.inv) });
+  return env.get('btCompare')(R(S), R(D));
 }
 const num = (v, loc) => v.toLocaleString(loc, { maximumFractionDigits: 0, minimumFractionDigits: 0 });
 
 test('Backtest: el dato principal es la diferencia de valor con el DCA fijo (ES y EN)', { skip }, async () => {
-  const { diff, inv } = await expectedBt();
-  const d = Math.round(diff), di = Math.round(inv);
+  const { diff: d, inv: di } = await expectedBt();
   const p = await open({ storage: { seenHelp: '1' } });
   const txt = id => p.ev(`document.getElementById('${id}').textContent`);
   try {
@@ -460,7 +460,7 @@ test('Backtest: si la estrategia vale menos que el DCA fijo, lo dice sin signo �
   assert.ok(diff < 0);
   const p = await open({ storage: { seenHelp: '1', cfg: JSON.stringify(cfg) } });
   try {
-    assert.equal(await p.ev("document.getElementById('btDiffV').textContent"), num(Math.round(-diff), 'es-ES') + '\u202f$');
+    assert.equal(await p.ev("document.getElementById('btDiffV').textContent"), num(-diff, 'es-ES') + '\u202f$');
     assert.equal(await p.ev("document.getElementById('btDiffV').className"), 'down');
     assert.equal(await p.ev("document.getElementById('btDiffT').textContent"), 'menos que el DCA fijo');
     assert.deepEqual(p.errors, []);
@@ -477,6 +477,28 @@ test('Backtest a 390 px: las cifras de la tabla no se parten en dos líneas', { 
     }).map(td=>td.textContent)`);
     assert.deepEqual(lines, [], `cifras partidas en dos líneas: ${lines}`);
     assert.equal(await p.ev('document.documentElement.scrollWidth > innerWidth'), false);
+  } finally { await p.close(); }
+});
+
+test('Backtest: la cifra principal es siempre la resta exacta de los «Valor hoy» de la tabla', { skip }, async () => {
+  const p = await open({ storage: { seenHelp: '1' } });
+  try {
+    assert.equal(await p.ev("document.getElementById('btSum').getAttribute('role')"), null, 'el resumen no debe ser una región «status» que se anuncie en cada cambio');
+    const bad = await p.ev(`(()=>{
+      const out=[],sel=document.getElementById('btFrom'),parse=s=>+s.replace(/[^0-9]/g,'');
+      for(const base of [10,7,13.3]){
+        const b=document.getElementById('base');b.value=base;b.dispatchEvent(new Event('input'));
+        for(const y of [...sel.options].map(o=>o.value)){
+          sel.value=y;sel.dispatchEvent(new Event('change'));
+          const v=document.getElementById('btDiffV'),td=document.querySelector('#btTbl tbody tr').querySelectorAll('td');
+          const shown=parse(v.textContent)*(v.className==='down'?-1:1),table=parse(td[0].textContent)-parse(td[1].textContent);
+          if(shown!==table)out.push('base '+base+' desde '+y+': '+shown+' ≠ '+table);
+        }
+      }
+      return out;
+    })()`);
+    assert.deepEqual(bad, []);
+    assert.deepEqual(p.errors, []);
   } finally { await p.close(); }
 });
 
