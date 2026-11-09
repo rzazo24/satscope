@@ -25,34 +25,35 @@ self.addEventListener('activate', e => {
   );
 });
 
+const SHELL_PATHS = new Set(SHELL);
+
 self.addEventListener('fetch', e => {
   const req = e.request;
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
 
-  // APIs de datos (Binance, alternative.me) y analítica: siempre a la red, sin caché.
+  // Fuera de la app (APIs de precios, Fear & Greed, nodos de Polygon…): siempre a la red, sin caché.
   // Si fallan, la propia página usa la instantánea integrada.
-  if (url.origin === location.origin && url.pathname.startsWith('/_vercel/')) return;
+  if (url.origin !== location.origin) return;
 
-  // Página: la versión guardada de este service worker (abre al instante y sin conexión).
-  // Las versiones nuevas llegan con un service worker nuevo y la página avisa.
+  // Portada: la versión guardada de este service worker (abre al instante y sin conexión), también
+  // con parámetros (p. ej. ?utm=…). Las versiones nuevas llegan con un service worker nuevo y la página avisa.
+  // Otras navegaciones (/recordatorio.ics, /og.png…) van a la red: si no, abrirían la app en vez del archivo.
   if (req.mode === 'navigate') {
-    e.respondWith(
-      caches.open(CACHE).then(c => c.match('/')).then(hit => hit || fetch(req))
-    );
+    if (url.pathname === '/') e.respondWith(caches.open(CACHE).then(c => c.match('/')).then(hit => hit || fetch(req)));
     return;
   }
 
-  // Archivos propios: la caché primero y, si no está, la red.
-  if (url.origin === location.origin) {
-    e.respondWith(
-      caches.open(CACHE).then(async c => {
-        const hit = await c.match(req, { ignoreSearch: true });
-        if (hit) return hit;
-        const res = await fetch(req);
-        if (res.ok) c.put(req, res.clone());
-        return res;
-      })
-    );
-  }
+  // La caché en tiempo de ejecución solo sirve y guarda los archivos de SHELL, sin parámetros y con
+  // coincidencia exacta (sin ignoreSearch). Lo demás (/sw.js, /_vercel/…, URLs con ?…) va a la red y no se guarda.
+  if (url.search || url.pathname === '/sw.js' || !SHELL_PATHS.has(url.pathname)) return;
+  e.respondWith(
+    caches.open(CACHE).then(async c => {
+      const hit = await c.match(url.pathname);
+      if (hit) return hit;
+      const res = await fetch(req);
+      if (res.ok) c.put(url.pathname, res.clone());
+      return res;
+    })
+  );
 });

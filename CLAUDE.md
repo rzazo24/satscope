@@ -36,6 +36,7 @@ Puntuación 0–100 = media ponderada de Fear & Greed (30), caída desde máximo
 - **`T` sombreado**: en `draw`/`drawBt` hay una variable local `T` (margen superior); ahí usa `I18N[LANG]`, no `T()`.
 - **`T()` es un Proxy** que sustituye `{U}` por `BTC` o `WBTC` en todos los textos. Para textos de tenencias usa `{U}` en I18N, no «BTC» literal. El precio («BTC ahora a…») sigue siendo BTC.
 - **CSS**: `[hidden]{display:none!important}` existe porque reglas con `display` pisaban `hidden`. Los campos comparten estilo (`input:not([type=checkbox]):not([type=file]),select`, 16 px para evitar el zoom de iPhone). `.btn` usa `box-sizing:border-box` para que un `<a class="btn">` mida igual que un `<button>`. El recuadro de foco solo se ve en modo teclado (clase `kbd` en `<html>`, que se activa con Tab).
+- **Service worker**: la caché en tiempo de ejecución solo sirve y guarda rutas de `SHELL` exactas, sin parámetros y sin `ignoreSearch`; `/sw.js` y todo lo demás va a la red. Solo la navegación a `/` devuelve la app guardada: otras navegaciones (p. ej. `/recordatorio.ics`) deben llegar a la red. Lo cubre `tests/sw.test.mjs`.
 - **Ajustes**: solo se guardan las diferencias con `DEF` en `cfg`; la versión antigua `dcaCfg` se migra con `migrateCfg`.
 - **Textos nuevos**: añádelos en `es` y `en` con los mismos parámetros; si un parámetro elige variante en vez de insertarse, decláralo en `SELECTORS` de `tests/i18n.test.mjs`.
 
