@@ -450,7 +450,7 @@ test('Backtest: el dato principal compara con un DCA fijo con el mismo dinero (E
     assert.equal(await txt('btDiffV'), (d > 0 ? '+' : '') + num(Math.abs(d), 'es-ES') + '$'); // el hueco es un margen, no un carácter
     assert.equal(await txt('btDiffT'), (d > 0 ? 'más' : d < 0 ? 'menos' : 'igual') + ' que un DCA fijo con el mismo dinero');
     // Los dos valores que se restan, visibles bajo la cifra: la estrategia (el mismo que la tabla) y el DCA equivalente
-    assert.equal(await txt('btVals'), `${num(S.val, 'es-ES')} $ con tu estrategia frente a ${num(E.val, 'es-ES')} $ con un DCA fijo con el mismo dinero.`);
+    assert.equal(await txt('btVals'), `${num(S.val, 'es-ES')} $ con tu estrategia frente a ${num(E.val, 'es-ES')} $.`);
     assert.equal(Math.round(S.val) - Math.round(E.val), d, 'la cifra principal es la resta de los dos valores');
     assert.equal(await p.ev("document.querySelector('#btTbl tbody tr td').textContent"), `${num(S.val, 'es-ES')} $`);
     assert.equal(await p.ev('document.querySelectorAll("#btTbl thead th").length'), 3, 'la tabla sigue con dos columnas de datos');
@@ -466,7 +466,7 @@ test('Backtest: el dato principal compara con un DCA fijo con el mismo dinero (E
     await p.ev("document.querySelector('#langSeg [data-lang=en]').click()");
     assert.equal(await txt('btDiffV'), (d > 0 ? '+$' : '$') + num(Math.abs(d), 'en-US'));
     assert.equal(await txt('btDiffT'), (d > 0 ? 'more than' : d < 0 ? 'less than' : 'the same as') + ' fixed DCA with the same money');
-    assert.equal(await txt('btVals'), `$${num(S.val, 'en-US')} with your strategy vs $${num(E.val, 'en-US')} with fixed DCA with the same money.`);
+    assert.equal(await txt('btVals'), `$${num(S.val, 'en-US')} with your strategy vs $${num(E.val, 'en-US')}.`);
     assert.match(await txt('btDiffSub'), /^Average buy price: \$[\d,]+ with your strategy vs \$[\d,]+ with the equivalent DCA\. Equivalent DCA: your \$[\d,]+ split equally, \$[\d.,]+ a week for [\d,]+ weeks\.$/);
     assert.deepEqual(p.errors, []);
   } finally { await p.close(); }
