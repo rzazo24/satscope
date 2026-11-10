@@ -544,3 +544,17 @@ test('El CSV guarda los números sin formato aunque la app muestre separadores d
   } finally { await p.close(); }
 });
 
+test('Backtest: la cifra grande queda separada del texto que la sigue', { skip }, async () => {
+  const p = await open({ width: 390, storage: { seenHelp: '1' } });
+  try {
+    // Hueco entre el final de la cifra («… $») y el inicio de «más que…», en la misma línea
+    const gap = await p.ev(`(()=>{
+      const v=document.getElementById('btDiffV').getBoundingClientRect();
+      const r=document.createRange();r.selectNodeContents(document.getElementById('btDiffT'));
+      const first=r.getClientRects()[0];
+      return Math.round(first.left-v.right);
+    })()`);
+    assert.ok(gap >= 10, `hueco de ${gap} px`);
+  } finally { await p.close(); }
+});
+
