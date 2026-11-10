@@ -155,6 +155,7 @@ select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .bt-sum{display:grid;gap:2px;margin-bottom:12px;padding:12px 14px;border:1px solid var(--line);border-radius:8px;background:var(--bg)}
 .bt-sum .n{font-size:.78rem;color:var(--muted)}
 .bt-sum strong{font-family:var(--mono);font-size:1.6rem;font-variant-numeric:tabular-nums;margin-right:.3em} /* separa la cifra del texto «más que…» */
+.bt-sum strong .cur{margin-left:.15em}
 .bt-sum strong.up{color:var(--buy)}
 .bt-sum strong.down{color:var(--sell)}
 .bt-sum div span{font-weight:600}
@@ -1101,8 +1102,11 @@ function renderBt(c){
   // Dato principal: diferencia de valor hoy. Se redondea cada columna antes de restar, para que la cifra
   // coincida siempre con la resta de los importes que muestra la tabla (redondear la diferencia podía dar 1 $ de más o de menos)
   const {diff:d}=btCompare({val:Math.round(S.val)},{val:Math.round(E.val)});
-  // Espacio fino irrompible entre la cifra y el símbolo: con la letra grande, el espacio normal se ve demasiado ancho
-  $('btDiffV').textContent=(d>0?'+'+usd(d):usd(Math.abs(d))).replace(' ','\u202f');
+  // Sin carácter de espacio entre la cifra y el símbolo: en la fuente monoespaciada Safari le da el ancho de un
+  // carácter entero. Si el formato lleva espacio («62 $»), el símbolo va en su propio <span> y el hueco es un margen
+  const big=d>0?'+'+usd(d):usd(Math.abs(d)),sp=big.lastIndexOf(' ');
+  if(sp<0)$('btDiffV').textContent=big;
+  else{const cur=document.createElement('span');cur.className='cur';cur.textContent=big.slice(sp+1);$('btDiffV').replaceChildren(big.slice(0,sp),cur)}
   $('btDiffV').className=d>0?'up':d<0?'down':'';
   $('btDiffT').textContent=d>0?t.btMore:d<0?t.btLess:t.btSame;
   $('btDiffSub').textContent=t.btAvg(S.avg?usd(S.avg):'–',E.avg?usd(E.avg):'–')+' '+t.btEq(usd(S.inv),usd(E.weekly,2),fmt(E.weeks));

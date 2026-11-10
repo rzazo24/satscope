@@ -447,7 +447,7 @@ test('Backtest: el dato principal compara con un DCA fijo con el mismo dinero (E
   const p = await open({ storage: { seenHelp: '1' } });
   const txt = id => p.ev(`document.getElementById('${id}').textContent`);
   try {
-    assert.equal(await txt('btDiffV'), (d > 0 ? '+' : '') + num(Math.abs(d), 'es-ES') + '\u202f$');
+    assert.equal(await txt('btDiffV'), (d > 0 ? '+' : '') + num(Math.abs(d), 'es-ES') + '$'); // el hueco es un margen, no un carácter
     assert.equal(await txt('btDiffT'), (d > 0 ? 'más' : d < 0 ? 'menos' : 'igual') + ' que un DCA fijo con el mismo dinero');
     const sub = await txt('btDiffSub');
     assert.ok(sub.startsWith(`Precio medio de compra: ${num(S.avg, 'es-ES')} $ con tu estrategia frente a ${num(E.avg, 'es-ES')} $ con el DCA equivalente.`), sub);
@@ -472,7 +472,7 @@ test('Backtest: si la estrategia vale menos que un DCA con el mismo dinero, lo d
   assert.ok(diff < 0);
   const p = await open({ storage: { seenHelp: '1', cfg: JSON.stringify(cfg) } });
   try {
-    assert.equal(await p.ev("document.getElementById('btDiffV').textContent"), num(-diff, 'es-ES') + '\u202f$');
+    assert.equal(await p.ev("document.getElementById('btDiffV').textContent"), num(-diff, 'es-ES') + '$');
     assert.equal(await p.ev("document.getElementById('btDiffV').className"), 'down');
     assert.equal(await p.ev("document.getElementById('btDiffT').textContent"), 'menos que un DCA fijo con el mismo dinero');
     assert.deepEqual(p.errors, []);
@@ -555,6 +555,24 @@ test('Backtest: la cifra grande queda separada del texto que la sigue', { skip }
       return Math.round(first.left-v.right);
     })()`);
     assert.ok(gap >= 10, `hueco de ${gap} px`);
+  } finally { await p.close(); }
+});
+
+test('Backtest: entre la cifra grande y «$» no hay carácter de espacio, sino un margen', { skip }, async () => {
+  const p = await open({ width: 390, storage: { seenHelp: '1' } });
+  try {
+    assert.equal(await p.ev("/\\s|\\u00a0|\\u202f/.test(document.getElementById('btDiffV').textContent)"), false, 'sin espacios en la cifra');
+    assert.equal(await p.ev("document.querySelector('#btDiffV .cur').textContent"), '$');
+    const gap = await p.ev(`(()=>{
+      const v=document.getElementById('btDiffV'),cur=v.querySelector('.cur'),r=document.createRange();
+      r.setStart(v.firstChild,0);r.setEnd(v.firstChild,v.firstChild.length);
+      return cur.getBoundingClientRect().left-r.getBoundingClientRect().right;
+    })()`);
+    assert.ok(gap > 2 && gap < 12, `hueco de ${gap} px entre la cifra y «$»`);
+    // En inglés el símbolo va delante y sin hueco: «+$9,243»
+    await p.ev("document.querySelector('#langSeg [data-lang=en]').click()");
+    assert.match(await p.ev("document.getElementById('btDiffV').textContent"), /^[+]?\$[\d,]+$/);
+    assert.equal(await p.ev("document.querySelector('#btDiffV .cur')"), null);
   } finally { await p.close(); }
 });
 
