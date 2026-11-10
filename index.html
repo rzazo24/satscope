@@ -116,6 +116,7 @@ dialog.help::backdrop{background:rgba(0,0,0,.45)}
 /* box-sizing y flex: un enlace con .btn (el recordatorio) mide igual que un <button> */
 .btn{box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;text-decoration:none;line-height:1.2;font:inherit;font-size:.85rem;font-weight:600;padding:6px 12px;min-height:34px;border-radius:6px;border:1px solid var(--line);background:var(--panel);color:var(--fg);cursor:pointer}
 .btn:disabled{opacity:.5;cursor:default}
+.btn.danger{background:var(--sell);color:#fff;border-color:var(--sell)}
 .btn.pri{background:var(--fg);color:var(--bg);border-color:var(--fg)}
 .btn:focus-visible,.lnk:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .lnk{font:inherit;font-size:.85rem;border:0;background:none;color:var(--accent);text-decoration:underline;cursor:pointer;padding:4px}
@@ -603,7 +604,7 @@ const I18N={
     chartAria:(mn,mx,last,sell)=>`Gráfico de la puntuación de las últimas 104 semanas: mínima ${mn}, máxima ${mx}, actual ${last}. Umbral de venta: ${sell}.`,
     btAria:(f,to,a,b)=>`Gráfico del valor de la cartera de ${f} a ${to}: tu estrategia termina en ${a} y el DCA fijo en ${b}.`,
     aSellBtc:(b,u)=>`Vende ${b} {U} esta semana (≈ ${u})`,
-    markDone:'Marcar como hecha',save:'Guardar',cancel:'Cancelar',undo:'Deshacer',
+    markDone:'Marcar como hecha',save:'Guardar',cancel:'Cancelar',undo:'Deshacer',undoQ:'¿Borrar esta operación del registro?',undoYes:'Sí, borrar',
     fUsdBuy:'Importe pagado ($)',fBtcBuy:'{U} recibido',fBtcSell:'{U} vendido',fUsdSell:'Recibido ($)',
     doneBuy:(u,b)=>`Hecha: compraste ${b} {U} por ${u}`,doneSell:(u,b)=>`Hecha: vendiste ${b} {U} por ${u}`,
     pf:'Tu cartera',pfEmpty:'Aún no hay operaciones. Márcalas como hechas desde la acción de la semana o añádelas a mano.',
@@ -638,7 +639,7 @@ const I18N={
     chartAria:(mn,mx,last,sell)=>`Chart of the score over the last 104 weeks: low ${mn}, high ${mx}, current ${last}. Sell threshold: ${sell}.`,
     btAria:(f,to,a,b)=>`Chart of portfolio value from ${f} to ${to}: your strategy ends at ${a} and fixed DCA at ${b}.`,
     aSellBtc:(b,u)=>`Sell ${b} {U} this week (≈ ${u})`,
-    markDone:'Mark as done',save:'Save',cancel:'Cancel',undo:'Undo',
+    markDone:'Mark as done',save:'Save',cancel:'Cancel',undo:'Undo',undoQ:'Delete this trade from the log?',undoYes:'Yes, delete',
     fUsdBuy:'Amount paid ($)',fBtcBuy:'{U} received',fBtcSell:'{U} sold',fUsdSell:'Received ($)',
     doneBuy:(u,b)=>`Done: you bought ${b} {U} for ${u}`,doneSell:(u,b)=>`Done: you sold ${b} {U} for ${u}`,
     pf:'Your portfolio',pfEmpty:'No trades yet. Mark them as done from this week\'s action or add them by hand.',
@@ -913,7 +914,7 @@ function mergeOps(list,incoming){
   for(const o of incoming)if(!have.has(key(o))){out.push(o);have.add(key(o));added++}
   return {list:out,added};
 }
-let CUR=null,FORM=false;
+let CUR=null,FORM=false,UNDO_ASK=null; // UNDO_ASK: operación de la semana pendiente de confirmar su borrado
 let WALLET={addr:'',bal:null,status:'idle'},walletSeq=0; // status: idle | bad | loading | ok | err
 try{WALLET.addr=localStorage.getItem('wallet')||''}catch(e){}
 $('wallet').value=WALLET.addr;
@@ -1006,7 +1007,10 @@ function renderDone(){
   const mine=LEDGER.filter(o=>o.type===CUR.kind&&inWeek(o.d,CUR.t));
   if(mine.length){
     const o=mine.at(-1);
-    el.innerHTML=`<span class="ok">✓ ${(o.type==='buy'?t.doneBuy:t.doneSell)(usd(o.usd,2),fmt(o.btc,8))}</span><button type="button" class="lnk" data-undo="${o.id}">${t.undo}</button>`;
+    // Deshacer pide confirmación: el primer toque solo pregunta; borrar exige «Sí, borrar»
+    el.innerHTML=UNDO_ASK===o.id
+      ?`<span>${t.undoQ}</span><button type="button" class="btn danger" data-undo-yes="${o.id}">${t.undoYes}</button><button type="button" class="btn" data-undo-no>${t.cancel}</button>`
+      :`<span class="ok">✓ ${(o.type==='buy'?t.doneBuy:t.doneSell)(usd(o.usd,2),fmt(o.btc,8))}</span><button type="button" class="lnk" data-undo-ask="${o.id}">${t.undo}</button>`;
   }else if(FORM){
     const buy=CUR.kind==='buy';
     el.innerHTML=`<form id="doneForm">
@@ -1018,7 +1022,9 @@ function renderDone(){
 $('done').addEventListener('click',e=>{
   if(e.target.closest('[data-mark]')){FORM=true;renderDone();$('dUsd').focus()}
   else if(e.target.closest('[data-cancel]')){FORM=false;renderDone()}
-  else{const u=e.target.closest('[data-undo]');if(u){LEDGER=LEDGER.filter(o=>o.id!==u.dataset.undo);saveLedger()}}
+  else if(e.target.closest('[data-undo-ask]')){UNDO_ASK=e.target.closest('[data-undo-ask]').dataset.undoAsk;renderDone();$('done').querySelector('[data-undo-no]').focus()}
+  else if(e.target.closest('[data-undo-no]')){UNDO_ASK=null;renderDone()}
+  else{const u=e.target.closest('[data-undo-yes]');if(u){UNDO_ASK=null;LEDGER=LEDGER.filter(o=>o.id!==u.dataset.undoYes);saveLedger()}}
 });
 $('done').addEventListener('submit',e=>{
   e.preventDefault();const u=+$('dUsd').value,b=+$('dBtc').value;if(!(u>0&&b>0))return;

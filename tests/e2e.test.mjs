@@ -185,8 +185,20 @@ test('Marcar la semana como hecha, ver la cartera y deshacer', { skip }, async (
     assert.match(await p.ev("document.getElementById('done').textContent"), /✓ Hecha: compraste/);
     assert.equal(await p.ev("document.getElementById('pfStats').hidden"), false);
     assert.equal(await p.ev("document.querySelectorAll('#pfOps tbody tr').length"), 1);
-    await p.ev("document.querySelector('[data-undo]').click()");
+    // Deshacer pide confirmación: el primer toque no borra nada
+    await p.ev("document.querySelector('[data-undo-ask]').click()");
+    assert.equal(JSON.parse(await p.ev("localStorage.getItem('ledger')")).length, 1, 'un solo toque no debe borrar');
+    assert.match(await p.ev("document.getElementById('done').textContent"), /¿Borrar esta operación del registro\?/);
+    assert.equal(await p.ev("document.activeElement.hasAttribute('data-undo-no')"), true, 'el foco va a «Cancelar»');
+    // Cancelar vuelve al estado anterior sin borrar
+    await p.ev("document.querySelector('[data-undo-no]').click()");
+    assert.match(await p.ev("document.getElementById('done').textContent"), /✓ Hecha: compraste/);
+    assert.equal(JSON.parse(await p.ev("localStorage.getItem('ledger')")).length, 1);
+    // Deshacer y confirmar sí borra
+    await p.ev("document.querySelector('[data-undo-ask]').click()");
+    await p.ev("document.querySelector('[data-undo-yes]').click()");
     assert.equal(JSON.parse(await p.ev("localStorage.getItem('ledger')")).length, 0);
+    assert.ok(await p.ev("!!document.querySelector('[data-mark]')"), 'vuelve a «Marcar como hecha»');
     assert.deepEqual(p.errors, []);
   } finally { await p.close(); }
 });
