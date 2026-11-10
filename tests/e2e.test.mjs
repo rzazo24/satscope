@@ -437,22 +437,22 @@ async function expectedBt(cfg = DEF) {
   const rows = (await env.get('live()')).rows, SNAP = env.get('SNAP');
   const HIST = [...SNAP.filter(r => r.t < rows[0].t), ...rows];
   const from = HIST[0].t.slice(0, 4) + '-01-01';
-  const { S, D } = env.get('backtest')(HIST.filter(r => r.t >= from), cfg);
-  const R = o => ({ val: Math.round(o.val), inv: Math.round(o.inv) });
-  return env.get('btCompare')(R(S), R(D));
+  const { S, E } = env.get('backtest')(HIST.filter(r => r.t >= from), cfg);
+  return { ...env.get('btCompare')({ val: Math.round(S.val) }, { val: Math.round(E.val) }), S, E };
 }
 const num = (v, loc) => v.toLocaleString(loc, { maximumFractionDigits: 0, minimumFractionDigits: 0, useGrouping: 'always' });
 
-test('Backtest: el dato principal es la diferencia de valor con el DCA fijo (ES y EN)', { skip }, async () => {
-  const { diff: d, inv: di } = await expectedBt();
+test('Backtest: el dato principal compara con un DCA fijo con el mismo dinero (ES y EN)', { skip }, async () => {
+  const { diff: d, S, E } = await expectedBt();
   const p = await open({ storage: { seenHelp: '1' } });
   const txt = id => p.ev(`document.getElementById('${id}').textContent`);
   try {
     assert.equal(await txt('btDiffV'), (d > 0 ? '+' : '') + num(Math.abs(d), 'es-ES') + '\u202f$');
-    assert.equal(await txt('btDiffT'), d > 0 ? 'más que el DCA fijo' : d < 0 ? 'menos que el DCA fijo' : 'igual que el DCA fijo');
+    assert.equal(await txt('btDiffT'), (d > 0 ? 'más' : d < 0 ? 'menos' : 'igual') + ' que un DCA fijo con el mismo dinero');
     const sub = await txt('btDiffSub');
-    assert.ok(sub.startsWith(di < 0 ? `Con ${num(-di, 'es-ES')} $ menos invertidos.` : di > 0 ? `Con ${num(di, 'es-ES')} $ más invertidos.` : 'Con lo mismo invertido.'), sub);
-    assert.match(sub, /Rentabilidad sobre lo invertido: [+−-]?[\d.]+ % frente a [+−-]?[\d.]+ %\./);
+    assert.ok(sub.startsWith(`Precio medio de compra: ${num(S.avg, 'es-ES')} $ con tu estrategia frente a ${num(E.avg, 'es-ES')} $ con el DCA equivalente.`), sub);
+    assert.ok(sub.includes(`DCA equivalente: tus ${num(S.inv, 'es-ES')} $ repartidos a partes iguales,`), sub);
+    assert.ok(sub.endsWith(`durante ${num(E.weeks, 'es-ES')} semanas.`), sub);
     // En la tabla, «Valor hoy» va primero y la rentabilidad, al final y como dato secundario
     const rows = await p.ev("[...document.querySelectorAll('#btTbl tbody tr')].map(r=>[r.querySelector('th').textContent,r.className])");
     assert.equal(rows[0][0], 'Valor hoy');
@@ -460,21 +460,21 @@ test('Backtest: el dato principal es la diferencia de valor con el DCA fijo (ES 
     // En inglés
     await p.ev("document.querySelector('#langSeg [data-lang=en]').click()");
     assert.equal(await txt('btDiffV'), (d > 0 ? '+$' : '$') + num(Math.abs(d), 'en-US'));
-    assert.equal(await txt('btDiffT'), d > 0 ? 'more than fixed DCA' : d < 0 ? 'less than fixed DCA' : 'the same as fixed DCA');
-    assert.match(await txt('btDiffSub'), /^With .* invested\. Return on money invested: .* vs .*\.$/);
+    assert.equal(await txt('btDiffT'), (d > 0 ? 'more than' : d < 0 ? 'less than' : 'the same as') + ' fixed DCA with the same money');
+    assert.match(await txt('btDiffSub'), /^Average buy price: \$[\d,]+ with your strategy vs \$[\d,]+ with the equivalent DCA\. Equivalent DCA: your \$[\d,]+ split equally, \$[\d.,]+ a week for [\d,]+ weeks\.$/);
     assert.deepEqual(p.errors, []);
   } finally { await p.close(); }
 });
 
-test('Backtest: si la estrategia vale menos que el DCA fijo, lo dice sin signo «+»', { skip }, async () => {
-  const cfg = { m0: 0, m1: 0, m2: 0, m3: 0, m4: 0, sellAt: 101 }; // no compra nunca → vale 0
+test('Backtest: si la estrategia vale menos que un DCA con el mismo dinero, lo dice sin signo «+»', { skip }, async () => {
+  const cfg = { m0: 0, m1: 0, m2: 0, m3: 0, m4: 5, sellAt: 101 }; // solo compra en euforia (caro) y nunca vende
   const { diff } = await expectedBt({ ...DEF, ...cfg });
   assert.ok(diff < 0);
   const p = await open({ storage: { seenHelp: '1', cfg: JSON.stringify(cfg) } });
   try {
     assert.equal(await p.ev("document.getElementById('btDiffV').textContent"), num(-diff, 'es-ES') + '\u202f$');
     assert.equal(await p.ev("document.getElementById('btDiffV').className"), 'down');
-    assert.equal(await p.ev("document.getElementById('btDiffT').textContent"), 'menos que el DCA fijo');
+    assert.equal(await p.ev("document.getElementById('btDiffT').textContent"), 'menos que un DCA fijo con el mismo dinero');
     assert.deepEqual(p.errors, []);
   } finally { await p.close(); }
 });
@@ -492,7 +492,7 @@ test('Backtest a 390 px: las cifras de la tabla no se parten en dos líneas', { 
   } finally { await p.close(); }
 });
 
-test('Backtest: la cifra principal es siempre la resta exacta de los «Valor hoy» de la tabla', { skip }, async () => {
+test('Backtest: la cifra principal es siempre valor de la estrategia (el de la tabla) − valor del DCA equivalente', { skip }, async () => {
   const p = await open({ storage: { seenHelp: '1' } });
   try {
     assert.equal(await p.ev("document.getElementById('btSum').getAttribute('role')"), null, 'el resumen no debe ser una región «status» que se anuncie en cada cambio');
@@ -503,8 +503,10 @@ test('Backtest: la cifra principal es siempre la resta exacta de los «Valor hoy
         for(const y of [...sel.options].map(o=>o.value)){
           sel.value=y;sel.dispatchEvent(new Event('change'));
           const v=document.getElementById('btDiffV'),td=document.querySelector('#btTbl tbody tr').querySelectorAll('td');
-          const shown=parse(v.textContent)*(v.className==='down'?-1:1),table=parse(td[0].textContent)-parse(td[1].textContent);
-          if(shown!==table)out.push('base '+base+' desde '+y+': '+shown+' ≠ '+table);
+          const {S,E}=backtest(HIST.filter(r=>r.t>=y+'-01-01'),cfg());
+          const shown=parse(v.textContent)*(v.className==='down'?-1:1),expected=parse(td[0].textContent)-Math.round(E.val);
+          if(parse(td[0].textContent)!==Math.round(S.val))out.push('tabla '+td[0].textContent+' ≠ '+S.val);
+          if(shown!==expected)out.push('base '+base+' desde '+y+': '+shown+' ≠ '+expected);
         }
       }
       return out;

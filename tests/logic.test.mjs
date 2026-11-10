@@ -89,11 +89,47 @@ test('Instantánea: semanas consecutivas y datos completos', () => {
   }
 });
 
-test('Backtest: la comparación destaca la diferencia de valor, no la rentabilidad', () => {
-  const { btCompare } = vm.runInContext('({btCompare})', ctx);
-  const S = { val: 30178, inv: 3570, ret: 745.3 }, D = { val: 20935, inv: 4580, ret: 357.1 };
-  const r = btCompare(S, D);
-  assert.equal(r.diff, 9243);  // dato principal: +9.243 $ más que el DCA fijo
-  assert.equal(r.inv, -1010);  // con 1010 $ menos invertidos
-  assert.equal(btCompare(D, S).diff, -9243);
+const { btCompare } = vm.runInContext('({btCompare})', ctx);
+const brow = (s, p) => ({ t: '2020-01-01', p, fng: s, rsi: s, dd: 0, w200: 1 }); // puntuación = s (solo F&G y RSI)
+const BC = { ...DEF, wD: 0, wW: 0 };
+
+test('DCA equivalente: el mismo dinero nuevo de la estrategia, repartido a partes iguales cada semana', () => {
+  // Compra 50 $ a 100 → vende el 2 % a 1000 → miedo: compra 50 $ + 10 $ de reserva a 100. Dinero nuevo: 100 $
+  const { S, E } = backtest([brow(10, 100), brow(90, 1000), brow(10, 100)], BC);
+  assert.equal(S.inv, 100);
+  assert.equal(E.inv, 100, 'la reserva reutilizada no cuenta como dinero invertido');
+  assert.equal(E.weeks, 3);
+  near(E.weekly, 100 / 3, 1e-12);
+  near(E.btc, (100 / 3) / 100 + (100 / 3) / 1000 + (100 / 3) / 100, 1e-12);
+  near(E.val, E.btc * 100, 1e-9); // valor al último precio
+  near(E.avg, 100 / E.btc, 1e-9);
+});
+
+test('Backtest: si la estrategia invierte menos pero compra más barato, el dato principal sale positivo', () => {
+  // Semana 1: miedo extremo a 100 $ → la estrategia compra 50 $. Luego 9 semanas tranquilas a 200 $: no compra.
+  const { S, D, E } = backtest([brow(10, 100), ...Array.from({ length: 9 }, () => brow(50, 200))], BC);
+  assert.equal(S.inv, 50);
+  assert.equal(D.inv, 100);                            // el DCA con la aportación base invierte el doble…
+  near(D.val, 110, 1e-9); near(S.val, 100, 1e-9);
+  assert.ok(btCompare(S, D).diff < 0, 'frente al DCA base parecería peor (el sesgo)');
+  // …pero con el mismo dinero (5 $ por semana) el DCA compra casi todo a 200 $
+  near(E.weekly, 5, 1e-12);
+  near(E.val, (5 / 100 + 9 * 5 / 200) * 200, 1e-9);   // 55 $
+  near(btCompare(S, E).diff, 45, 1e-9);                // dato principal: +45 $
+  assert.ok(btCompare(S, E).diff > 0);
+  near(S.avg, 100, 1e-9);
+  near(E.avg, 50 / (5 / 100 + 9 * 5 / 200), 1e-9);    // ≈ 181,82 $: la estrategia compró más barato
+  assert.ok(S.avg < E.avg);
+});
+
+test('Backtest: el DCA equivalente usa las mismas semanas y no compra si la estrategia no invierte', () => {
+  const sinDatos = { t: '2020-01-01', p: 1, fng: null, rsi: null, dd: 0, w200: 1 }; // sin puntuación: no cuenta
+  const { E, D } = backtest([brow(10, 100), sinDatos, brow(50, 200)], BC);
+  assert.equal(E.weeks, 2);
+  assert.equal(D.inv, 20);
+  const none = backtest([brow(50, 100), brow(50, 200)], BC); // nunca compra
+  assert.equal(none.E.inv, 0);
+  assert.equal(none.E.btc, 0);
+  assert.equal(none.E.avg, null);
+  assert.equal(btCompare(none.S, none.E).diff, 0);
 });

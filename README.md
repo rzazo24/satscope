@@ -49,7 +49,7 @@ Pesos, multiplicadores, aportación y umbral de venta se pueden cambiar en «Aju
 - **Ayuda integrada** en español e inglés: botón «Ayuda», un «?» en cada sección que abre la explicación correspondiente y una bienvenida en la primera visita. Muestra los valores de tus ajustes.
 - **Registro de operaciones:** marca la acción de la semana como hecha o añade operaciones a mano. La app calcula tu BTC, lo aportado, el valor, la rentabilidad, el precio medio, la reserva de ventas y las semanas saltadas, y con ello te dice cuánto BTC vender exactamente y cuánta reserva usar. Se guarda solo en tu navegador; puedes exportarlo e importarlo en CSV.
 - **WBTC en Polygon:** opción para que la app hable de WBTC y, si das tu dirección pública de Polygon, lea tu saldo de WBTC (solo lectura, con nodos públicos), lo compare con el registro y calcule las ventas con el saldo real.
-- **Backtest** desde el año que elijas: tu estrategia frente a un DCA fijo. El dato principal es cuánto vale hoy más o menos que el DCA fijo; la rentabilidad va como dato secundario porque las dos invierten cantidades distintas.
+- **Backtest** desde el año que elijas: tu estrategia frente a un DCA fijo. El dato principal compara con un DCA fijo que invierte el mismo dinero repartido a partes iguales cada semana, para medir solo si la estrategia compra mejor; el DCA con la aportación base queda como referencia.
 - Tema claro, oscuro o automático.
 - Equivalencia en euros de la acción y del precio (opcional). La estrategia y el registro van en dólares, porque las compras se hacen en dólares (USDC) en Polygon.
 - Recordatorio semanal para tu calendario (.ics), cada lunes a las 9:00.
