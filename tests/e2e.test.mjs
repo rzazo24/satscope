@@ -449,6 +449,11 @@ test('Backtest: el dato principal compara con un DCA fijo con el mismo dinero (E
   try {
     assert.equal(await txt('btDiffV'), (d > 0 ? '+' : '') + num(Math.abs(d), 'es-ES') + '$'); // el hueco es un margen, no un carácter
     assert.equal(await txt('btDiffT'), (d > 0 ? 'más' : d < 0 ? 'menos' : 'igual') + ' que un DCA fijo con el mismo dinero');
+    // Los dos valores que se restan, visibles bajo la cifra: la estrategia (el mismo que la tabla) y el DCA equivalente
+    assert.equal(await txt('btVals'), `${num(S.val, 'es-ES')} $ con tu estrategia frente a ${num(E.val, 'es-ES')} $ con un DCA fijo con el mismo dinero.`);
+    assert.equal(Math.round(S.val) - Math.round(E.val), d, 'la cifra principal es la resta de los dos valores');
+    assert.equal(await p.ev("document.querySelector('#btTbl tbody tr td').textContent"), `${num(S.val, 'es-ES')} $`);
+    assert.equal(await p.ev('document.querySelectorAll("#btTbl thead th").length'), 3, 'la tabla sigue con dos columnas de datos');
     const sub = await txt('btDiffSub');
     assert.ok(sub.startsWith(`Precio medio de compra: ${num(S.avg, 'es-ES')} $ con tu estrategia frente a ${num(E.avg, 'es-ES')} $ con el DCA equivalente.`), sub);
     assert.ok(sub.includes(`DCA equivalente: tus ${num(S.inv, 'es-ES')} $ repartidos a partes iguales,`), sub);
@@ -461,6 +466,7 @@ test('Backtest: el dato principal compara con un DCA fijo con el mismo dinero (E
     await p.ev("document.querySelector('#langSeg [data-lang=en]').click()");
     assert.equal(await txt('btDiffV'), (d > 0 ? '+$' : '$') + num(Math.abs(d), 'en-US'));
     assert.equal(await txt('btDiffT'), (d > 0 ? 'more than' : d < 0 ? 'less than' : 'the same as') + ' fixed DCA with the same money');
+    assert.equal(await txt('btVals'), `$${num(S.val, 'en-US')} with your strategy vs $${num(E.val, 'en-US')} with fixed DCA with the same money.`);
     assert.match(await txt('btDiffSub'), /^Average buy price: \$[\d,]+ with your strategy vs \$[\d,]+ with the equivalent DCA\. Equivalent DCA: your \$[\d,]+ split equally, \$[\d.,]+ a week for [\d,]+ weeks\.$/);
     assert.deepEqual(p.errors, []);
   } finally { await p.close(); }
@@ -492,7 +498,7 @@ test('Backtest a 390 px: las cifras de la tabla no se parten en dos líneas', { 
   } finally { await p.close(); }
 });
 
-test('Backtest: la cifra principal es siempre valor de la estrategia (el de la tabla) − valor del DCA equivalente', { skip }, async () => {
+test('Backtest: la cifra principal es siempre la resta de los dos valores del resumen (y el de la estrategia es el de la tabla)', { skip }, async () => {
   const p = await open({ storage: { seenHelp: '1' } });
   try {
     assert.equal(await p.ev("document.getElementById('btSum').getAttribute('role')"), null, 'el resumen no debe ser una región «status» que se anuncie en cada cambio');
@@ -504,9 +510,12 @@ test('Backtest: la cifra principal es siempre valor de la estrategia (el de la t
           sel.value=y;sel.dispatchEvent(new Event('change'));
           const v=document.getElementById('btDiffV'),td=document.querySelector('#btTbl tbody tr').querySelectorAll('td');
           const {S,E}=backtest(HIST.filter(r=>r.t>=y+'-01-01'),cfg());
-          const shown=parse(v.textContent)*(v.className==='down'?-1:1),expected=parse(td[0].textContent)-Math.round(E.val);
-          if(parse(td[0].textContent)!==Math.round(S.val))out.push('tabla '+td[0].textContent+' ≠ '+S.val);
-          if(shown!==expected)out.push('base '+base+' desde '+y+': '+shown+' ≠ '+expected);
+          // «X $ con tu estrategia frente a Y $ con un DCA fijo…»: X − Y debe ser la cifra grande, y X el valor de la tabla
+          const [x,yv]=document.getElementById('btVals').textContent.match(/[0-9.]+(?= [$])/g).map(parse);
+          const shown=parse(v.textContent)*(v.className==='down'?-1:1);
+          if(x!==parse(td[0].textContent))out.push('resumen '+x+' ≠ tabla '+td[0].textContent);
+          if(yv!==Math.round(E.val))out.push('DCA equivalente '+yv+' ≠ '+E.val);
+          if(shown!==x-yv)out.push('base '+base+' desde '+y+': '+shown+' ≠ '+x+' − '+yv);
         }
       }
       return out;

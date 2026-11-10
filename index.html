@@ -159,6 +159,7 @@ select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .bt-sum strong.up{color:var(--buy)}
 .bt-sum strong.down{color:var(--sell)}
 .bt-sum div span{font-weight:600}
+.bt-sum .vals{font-size:.85rem;font-variant-numeric:tabular-nums} /* los dos valores que se restan */
 .tbl tr.sec th,.tbl tr.sec td{font-size:.78rem;color:var(--muted)}
 .tbl thead th{font-size:.75rem;color:var(--muted)}
 .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.75rem;color:var(--muted);margin:12px 0 4px}
@@ -527,6 +528,7 @@ try{const t=localStorage.getItem('theme');if(t==='light'||t==='dark')document.do
     <div class="bt-sum" id="btSum">
       <span class="n" data-i18n="rVal"></span>
       <div><strong id="btDiffV"></strong> <span id="btDiffT"></span></div>
+      <span class="vals" id="btVals"></span>
       <span class="n" id="btDiffSub"></span>
     </div>
     <table class="tbl" id="btTbl"></table>
@@ -600,7 +602,7 @@ const I18N={
     sell:'Vender',buy:'Comprar',hold:'Esperar',
     aSell:p=>`Vende el ${p} % de tu {U} esta semana`,aBuy:(a,m)=>`Compra ${a} $ esta semana (×${m})`,aHold:'Esta semana no toca comprar ni vender',
     price:p=>`BTC ahora a ${p} $`,wk:(d,n)=>`Señal con el cierre semanal del ${d} · la siguiente, tras el cierre del ${n}`,wkSnap:d=>`Señal con los datos guardados del ${d}`,
-    bt:'Backtest',btFrom:'Desde',btMore:'más que un DCA fijo con el mismo dinero',btLess:'menos que un DCA fijo con el mismo dinero',btSame:'igual que un DCA fijo con el mismo dinero',btAvg:(a,b)=>`Precio medio de compra: ${a} con tu estrategia frente a ${b} con el DCA equivalente.`,btEq:(inv,w,n)=>`DCA equivalente: tus ${inv} repartidos a partes iguales, ${w} por semana durante ${n} semanas.`,btDyn:'Tu estrategia',btDca:'DCA fijo',rInv:'Invertido',rBtc:'BTC acumulado',rSold:'Reserva en efectivo',rVal:'Valor hoy',rRet:'Rentabilidad',rAvg:'Precio medio de compra',
+    bt:'Backtest',btFrom:'Desde',btMore:'más que un DCA fijo con el mismo dinero',btLess:'menos que un DCA fijo con el mismo dinero',btSame:'igual que un DCA fijo con el mismo dinero',btVals:(a,b)=>`${a} con tu estrategia frente a ${b} con un DCA fijo con el mismo dinero.`,btAvg:(a,b)=>`Precio medio de compra: ${a} con tu estrategia frente a ${b} con el DCA equivalente.`,btEq:(inv,w,n)=>`DCA equivalente: tus ${inv} repartidos a partes iguales, ${w} por semana durante ${n} semanas.`,btDyn:'Tu estrategia',btDca:'DCA fijo',rInv:'Invertido',rBtc:'BTC acumulado',rSold:'Reserva en efectivo',rVal:'Valor hoy',rRet:'Rentabilidad',rAvg:'Precio medio de compra',
     btNote:'Simulación semanal con los ajustes de abajo. Lo vendido se guarda como reserva y se usa para comprar el doble cuando la puntuación baja del umbral de reserva. DCA fijo: la aportación base todas las semanas. Sin comisiones. Valor hoy = BTC × último cierre semanal + reserva sin usar. El dato principal compara con un DCA fijo que invierte tu mismo dinero repartido a partes iguales cada semana; la columna «DCA fijo» usa la aportación base como referencia.',
     lReuse:'Usar reserva por debajo de',lEur:'Mostrar equivalencia en euros',
     eurP:e=>`(≈ ${e} €)`,eurA:(e,r)=>`Equivale a ≈ ${e} € (1 € = ${r} $)`,ics:'Recordatorio semanal',
@@ -635,7 +637,7 @@ const I18N={
     sell:'Sell',buy:'Buy',hold:'Hold',
     aSell:p=>`Sell ${p}% of your {U} this week`,aBuy:(a,m)=>`Buy $${a} this week (×${m})`,aHold:'No buying or selling this week',
     price:p=>`BTC now at $${p}`,wk:(d,n)=>`Signal from the weekly close of ${d} · next one after the close of ${n}`,wkSnap:d=>`Signal from saved data of ${d}`,
-    bt:'Backtest',btFrom:'From',btMore:'more than fixed DCA with the same money',btLess:'less than fixed DCA with the same money',btSame:'the same as fixed DCA with the same money',btAvg:(a,b)=>`Average buy price: ${a} with your strategy vs ${b} with the equivalent DCA.`,btEq:(inv,w,n)=>`Equivalent DCA: your ${inv} split equally, ${w} a week for ${n} weeks.`,btDyn:'Your strategy',btDca:'Fixed DCA',rInv:'Invested',rBtc:'BTC accumulated',rSold:'Cash reserve',rVal:'Value today',rRet:'Return',rAvg:'Average buy price',
+    bt:'Backtest',btFrom:'From',btMore:'more than fixed DCA with the same money',btLess:'less than fixed DCA with the same money',btSame:'the same as fixed DCA with the same money',btVals:(a,b)=>`${a} with your strategy vs ${b} with fixed DCA with the same money.`,btAvg:(a,b)=>`Average buy price: ${a} with your strategy vs ${b} with the equivalent DCA.`,btEq:(inv,w,n)=>`Equivalent DCA: your ${inv} split equally, ${w} a week for ${n} weeks.`,btDyn:'Your strategy',btDca:'Fixed DCA',rInv:'Invested',rBtc:'BTC accumulated',rSold:'Cash reserve',rVal:'Value today',rRet:'Return',rAvg:'Average buy price',
     btNote:'Weekly simulation with the settings below. Sale proceeds are kept as a reserve and used to buy double when the score drops below the reserve threshold. Fixed DCA: the base amount every week. No fees. Value today = BTC × last weekly close + unused reserve. The main figure compares with a fixed DCA that invests your same money split equally every week; the "Fixed DCA" column uses the base amount as a reference.',
     lReuse:'Use reserve below score',lEur:'Show euro equivalent',
     eurP:e=>`(≈ €${e})`,eurA:(e,r)=>`That's about €${e} (€1 = $${r})`,ics:'Weekly reminder',
@@ -1109,6 +1111,8 @@ function renderBt(c){
   else{const cur=document.createElement('span');cur.className='cur';cur.textContent=big.slice(sp+1);$('btDiffV').replaceChildren(big.slice(0,sp),cur)}
   $('btDiffV').className=d>0?'up':d<0?'down':'';
   $('btDiffT').textContent=d>0?t.btMore:d<0?t.btLess:t.btSame;
+  // Los dos valores que se restan, redondeados igual que la cifra principal: así se puede comprobar con una resta
+  $('btVals').textContent=t.btVals(usd(Math.round(S.val)),usd(Math.round(E.val)));
   $('btDiffSub').textContent=t.btAvg(S.avg?usd(S.avg):'–',E.avg?usd(E.avg):'–')+' '+t.btEq(usd(S.inv),usd(E.weekly,2),fmt(E.weeks));
   const row=(k,f,cls='')=>`<tr${cls?` class="${cls}"`:''}><th scope="row">${t[k]}</th><td>${f(S)}</td><td>${f(D)}</td></tr>`;
   $('btTbl').innerHTML=`<thead><tr><th></th><th scope="col">${t.btDyn}</th><th scope="col">${t.btDca}</th></tr></thead><tbody>`+
