@@ -29,7 +29,7 @@ Sobre una aportación base de **10 $**, según el tramo de 20 puntos:
 
 | Puntuación | 0–20 | 20–40 | 40–60 | 60–80 | 80–100 |
 |---|---|---|---|---|---|
-| Multiplicador | ×5 | ×1 | 0 | 0 | 0 |
+| Multiplicador | ×5 | ×2 | 0 | 0 | 0 |
 
 Con una puntuación de **80 o más** se vende un **2 %** del BTC acumulado. Lo cobrado se guarda como **reserva**: cuando la puntuación baja de **20** (miedo extremo), la compra de esa semana se duplica con dinero de la reserva. Si apuntas tus operaciones, la app lleva la reserva por ti y te dice cuánto usar.
 

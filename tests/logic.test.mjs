@@ -13,7 +13,9 @@ const ctx = vm.createContext({ clamp: v => Math.max(0, Math.min(100, v)), Math, 
 const { wilder, parts, score, backtest, SNAP, SNAP_START, SNAP_END } =
   vm.runInContext(code + ';({wilder,parts,score,backtest,SNAP,SNAP_START,SNAP_END})', ctx);
 
-const DEF = { base: 10, wF: 30, wD: 40, wW: 15, wR: 15, m0: 5, m1: 1, m2: 0, m3: 0, m4: 0, sellAt: 80, sellPct: 2, reuseBelow: 20 };
+// Configuración fija de estos tests (no son los valores por defecto de la app, que están en los <input> de
+// index.html y se leen en helpers.mjs): los resultados esperados de abajo están calculados con estos valores
+const CFG = { base: 10, wF: 30, wD: 40, wW: 15, wR: 15, m0: 5, m1: 1, m2: 0, m3: 0, m4: 0, sellAt: 80, sellPct: 2, reuseBelow: 20 };
 const near = (a, b, eps = 0.01) => assert.ok(Math.abs(a - b) <= eps, `${a} ≠ ${b} (±${eps})`);
 
 test('RSI de Wilder: coincide con el ejemplo de referencia de StockCharts', () => {
@@ -47,16 +49,16 @@ test('Indicadores: escalas de caída y de precio/MA200', () => {
 
 test('Puntuación: media ponderada y renormalización si falta Fear & Greed', () => {
   // f=20, d=50, w=0, r=60 → (20·30 + 50·40 + 0·15 + 60·15) / 100 = 35
-  near(score({ fng: 20, dd: 40, w200: 1, rsi: 60 }, DEF), 35);
+  near(score({ fng: 20, dd: 40, w200: 1, rsi: 60 }, CFG), 35);
   // Sin Fear & Greed: (50·40 + 0·15 + 60·15) / 70
-  near(score({ fng: null, dd: 40, w200: 1, rsi: 60 }, DEF), 2900 / 70);
+  near(score({ fng: null, dd: 40, w200: 1, rsi: 60 }, CFG), 2900 / 70);
   // Un peso a 0 no cuenta
-  near(score({ fng: 20, dd: 40, w200: 1, rsi: 60 }, { ...DEF, wF: 0 }), 2900 / 70);
+  near(score({ fng: 20, dd: 40, w200: 1, rsi: 60 }, { ...CFG, wF: 0 }), 2900 / 70);
 });
 
 test('Backtest: DCA fijo y compras por tramos', () => {
   // Puntuaciones controladas: fng=rsi=s, dd y w200 con peso 0
-  const c = { ...DEF, wD: 0, wW: 0 };
+  const c = { ...CFG, wD: 0, wW: 0 };
   const row = (s, p) => ({ t: '2020-01-01', p, fng: s, rsi: s, dd: 0, w200: 1 });
   const { S, D } = backtest([row(10, 100), row(30, 200), row(50, 100)], c);
   assert.equal(D.inv, 30); near(D.btc, 0.1 + 0.05 + 0.1, 1e-12);
@@ -66,7 +68,7 @@ test('Backtest: DCA fijo y compras por tramos', () => {
 });
 
 test('Backtest: venta parcial y reutilización de la reserva en miedo extremo', () => {
-  const c = { ...DEF, wD: 0, wW: 0 };
+  const c = { ...CFG, wD: 0, wW: 0 };
   const row = (s, p) => ({ t: '2020-01-01', p, fng: s, rsi: s, dd: 0, w200: 1 });
   // Compra 50 $ a 100 (0,5 BTC) → vende el 2 % a 1000 (0,01 BTC = 10 $) → miedo: compra 50 $ + 10 $ de reserva a 100
   const { S } = backtest([row(10, 100), row(90, 1000), row(10, 100)], c);
@@ -85,13 +87,13 @@ test('Instantánea: semanas consecutivas y datos completos', () => {
   for (const r of SNAP) {
     assert.ok(r.p > 0 && r.w200 > 0 && r.dd >= 0 && r.dd <= 100, r.t);
     assert.ok(r.rsi >= 0 && r.rsi <= 100, r.t);
-    assert.ok(score(r, DEF) >= 0 && score(r, DEF) <= 100, r.t);
+    assert.ok(score(r, CFG) >= 0 && score(r, CFG) <= 100, r.t);
   }
 });
 
 const { btCompare } = vm.runInContext('({btCompare})', ctx);
 const brow = (s, p) => ({ t: '2020-01-01', p, fng: s, rsi: s, dd: 0, w200: 1 }); // puntuación = s (solo F&G y RSI)
-const BC = { ...DEF, wD: 0, wW: 0 };
+const BC = { ...CFG, wD: 0, wW: 0 };
 
 test('DCA equivalente: el mismo dinero nuevo de la estrategia, repartido a partes iguales cada semana', () => {
   // Compra 50 $ a 100 → vende el 2 % a 1000 → miedo: compra 50 $ + 10 $ de reserva a 100. Dinero nuevo: 100 $

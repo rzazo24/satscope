@@ -29,7 +29,7 @@ On a base amount of **$10**, by 20-point band:
 
 | Score | 0–20 | 20–40 | 40–60 | 60–80 | 80–100 |
 |---|---|---|---|---|---|
-| Multiplier | ×5 | ×1 | 0 | 0 | 0 |
+| Multiplier | ×5 | ×2 | 0 | 0 | 0 |
 
 At a score of **80 or more**, sell **2%** of the BTC you hold. The proceeds are kept as a **reserve**: when the score drops below **20** (extreme fear), that week's purchase is doubled with money from the reserve. If you log your trades, the app keeps track of the reserve and tells you how much to use.
 

@@ -29,8 +29,9 @@ test('Resumen de cartera: vacío y sin BTC negativo', () => {
 
 test('Acción de la semana por tramos', () => {
   const env = load(), decide = env.get('decide');
-  assert.deepEqual(json(decide(10, DEF)), { kind: 'buy', mult: 5, usd: 50 });
-  assert.deepEqual(json(decide(25, DEF)), { kind: 'buy', mult: 1, usd: 10 });
+  // Multiplicadores y aportación por defecto: los del HTML (DEF), no valores fijos
+  assert.deepEqual(json(decide(10, DEF)), { kind: 'buy', mult: DEF.m0, usd: DEF.base * DEF.m0 });
+  assert.deepEqual(json(decide(25, DEF)), { kind: 'buy', mult: DEF.m1, usd: DEF.base * DEF.m1 });
   assert.equal(decide(45, DEF).kind, 'hold');
   assert.equal(decide(79.9, DEF).kind, 'hold');
   assert.equal(decide(80, DEF).kind, 'sell');
