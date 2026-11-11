@@ -50,5 +50,5 @@ Puntuación 0–100 = media ponderada de Fear & Greed (30), caída desde máximo
 
 ## Otros
 - Dominio: de momento no hay dominio propio. Las URLs absolutas de `og:image`, `og:url`, los `.ics` y el README apuntan a `satscope-seven.vercel.app`; si algún día cambia, actualízalas todas.
-- `og.png` y los iconos se generaron renderizando HTML/SVG con Chrome; la puntuación de `og.png` (37) es ilustrativa.
+- `og.png` y los iconos se generaron renderizando HTML/SVG con Chrome; la puntuación de `og.png` (37) es ilustrativa, pero la acción que muestra («Compra 20 $») sigue los valores por defecto: si cambian la aportación o los multiplicadores, regenérala.
 - No es asesoramiento financiero: no añadas textos que lo parezcan.
