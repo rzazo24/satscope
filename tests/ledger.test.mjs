@@ -129,3 +129,44 @@ test('Migración de ajustes antiguos: solo se conserva lo que el usuario cambió
   assert.deepEqual(json(migrate({ base: '7', sellAt: 90 }, ids)), { base: 7, sellAt: 90 });
   assert.deepEqual(json(migrate({}, ids)), {});
 });
+
+test('Progreso de la semana: compra en varias partes', () => {
+  const wp = load().get('weekProgress');
+  const cur = { kind: 'buy', usd: 20, btc: 20 / 80000, res: 0 };
+  const op = (usd, btc, res = 0) => ({ type: 'buy', usd, btc, res });
+  // Sin nada apuntado: el formulario propone la compra entera
+  let P = json(wp(cur, [], 80000));
+  assert.equal(P.partial, false);
+  assert.deepEqual(P.rem, { usd: 20, btc: 20 / 80000, res: 0 });
+  // 10 de 20: a medias, falta la otra mitad al precio actual
+  P = json(wp(cur, [op(10, 0.000125)], 80000));
+  assert.equal(P.partial, true);
+  assert.equal(P.done, 10); assert.equal(P.target, 20); assert.equal(P.left, 10);
+  assert.deepEqual(P.rem, { usd: 10, btc: 10 / 80000, res: 0 });
+  // 19,70 de 20 (menos de 0,50 $): se da por completa
+  assert.equal(wp(cur, [op(10, 0.000125), op(9.7, 0.00012)], 80000).partial, false);
+  // Más de lo previsto: completa, sin «lo que falta» negativo
+  P = json(wp(cur, [op(25, 0.0003)], 80000));
+  assert.equal(P.partial, false); assert.equal(P.left, 0);
+  assert.equal(P.usd, 25); assert.equal(P.btc, 0.0003);
+});
+
+test('Progreso de la semana: la parte que falta usa la reserva que queda', () => {
+  const wp = load().get('weekProgress');
+  // Objetivo: 20 $ de aportación + 20 $ de reserva = 40 $. Primera parte: 15 $ pagados con 15 $ de reserva
+  const P = json(wp({ kind: 'buy', usd: 40, btc: 0.0005, res: 20 }, [{ type: 'buy', usd: 15, btc: 0.0002, res: 15 }], 80000));
+  assert.equal(P.partial, true);
+  assert.equal(P.rem.usd, 25);
+  assert.equal(P.rem.res, 5, 'de los 20 $ de reserva solo quedan 5');
+});
+
+test('Progreso de la semana: venta en varias partes (se mide en BTC)', () => {
+  const wp = load().get('weekProgress');
+  const cur = { kind: 'sell', usd: 0.002 * 80000, btc: 0.002, res: 0 };
+  const P = json(wp(cur, [{ type: 'sell', usd: 80, btc: 0.001, res: 0 }], 80000));
+  assert.equal(P.partial, true);
+  assert.equal(P.left, 0.001);
+  assert.deepEqual(P.rem, { usd: 80, btc: 0.001, res: 0 });
+  assert.equal(wp(cur, [{ type: 'sell', usd: 159, btc: 0.00199, res: 0 }], 80000).partial, false); // falta < 2 %
+});
+

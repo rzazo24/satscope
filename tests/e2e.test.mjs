@@ -188,7 +188,7 @@ test('Marcar la semana como hecha, ver la cartera y deshacer', { skip }, async (
     // Deshacer pide confirmación: el primer toque no borra nada
     await p.ev("document.querySelector('[data-undo-ask]').click()");
     assert.equal(JSON.parse(await p.ev("localStorage.getItem('ledger')")).length, 1, 'un solo toque no debe borrar');
-    assert.match(await p.ev("document.getElementById('done').textContent"), /¿Borrar esta operación del registro\?/);
+    assert.match(await p.ev("document.getElementById('done').textContent"), /¿Borrar del registro la operación de 10,00 \$\?/);
     assert.equal(await p.ev("document.activeElement.hasAttribute('data-undo-no')"), true, 'el foco va a «Cancelar»');
     // Cancelar vuelve al estado anterior sin borrar
     await p.ev("document.querySelector('[data-undo-no]').click()");
@@ -582,6 +582,69 @@ test('Backtest: entre la cifra grande y «$» no hay carácter de espacio, sino 
     await p.ev("document.querySelector('#langSeg [data-lang=en]').click()");
     assert.match(await p.ev("document.getElementById('btDiffV').textContent"), /^[+]?\$[\d,]+$/);
     assert.equal(await p.ev("document.querySelector('#btDiffV .cur')"), null);
+  } finally { await p.close(); }
+});
+
+// Fecha de hoy en UTC: siempre cae en la semana del último cierre (las operaciones de la semana van tras el domingo)
+const todayUTC = () => new Date().toISOString().slice(0, 10);
+
+test('Compra de la semana en dos partes: «Llevas X de Y», apuntar lo que falta y deshacer la última', { skip }, async () => {
+  const cfg = { sellAt: 101, m0: 2, m1: 2, m2: 2, m3: 2, m4: 2 }; // siempre compra 20 $ (10 $ × 2)
+  const ledger = [{ id: 'p1', d: todayUTC(), type: 'buy', usd: 10, btc: 0.0001, res: 0 }];
+  const p = await open({ storage: { seenHelp: '1', cfg: JSON.stringify(cfg), ledger: JSON.stringify(ledger) } });
+  const done = () => p.ev("document.getElementById('done').textContent");
+  try {
+    assert.match(await done(), /^Llevas 10,00 \$ de 20,00 \$ esta semana\.Apuntar lo que faltaDeshacer$/);
+    // El formulario propone los 10 $ que faltan
+    await p.ev("document.querySelector('[data-mark]').click()");
+    assert.equal(await p.ev("document.getElementById('dUsd').value"), '10.00');
+    await p.ev("document.getElementById('dBtc').value='0.00012'");
+    await p.ev("document.querySelector('#doneForm button[type=submit]').click()");
+    assert.equal(JSON.parse(await p.ev("localStorage.getItem('ledger')")).length, 2);
+    // Completa: totales de la semana
+    assert.match(await done(), /✓ Hecha: compraste 0,00022000 BTC por 20,00 \$/);
+    // Deshacer borra solo la última parte (con confirmación) y vuelve a «Llevas 10 de 20»
+    await p.ev("document.querySelector('[data-undo-ask]').click()");
+    assert.match(await done(), /¿Borrar del registro la operación de 10,00 \$\?/);
+    await p.ev("document.querySelector('[data-undo-yes]').click()");
+    const led = JSON.parse(await p.ev("localStorage.getItem('ledger')"));
+    assert.deepEqual(led.map(o => o.id), ['p1']);
+    assert.match(await done(), /^Llevas 10,00 \$ de 20,00 \$ esta semana\./);
+    // En inglés
+    await p.ev("document.querySelector('#langSeg [data-lang=en]').click()");
+    assert.match(await p.ev("document.getElementById('done').textContent"), /^You've done \$10\.00 of \$20\.00 this week\.Log the rest/);
+    assert.deepEqual(p.errors, []);
+  } finally { await p.close(); }
+});
+
+test('El objetivo de la semana no cambia al apuntar una parte pagada con la reserva', { skip }, async () => {
+  // Reserva de 30 $ de una venta anterior; esta semana toca comprar 20 $ + 20 $ de reserva = 40 $
+  const cfg = { sellAt: 101, reuseBelow: 101, m0: 2, m1: 2, m2: 2, m3: 2, m4: 2 };
+  const ledger = [
+    { id: 'b0', d: '2026-01-05', type: 'buy', usd: 100, btc: 0.002, res: 0 },
+    { id: 's0', d: '2026-02-02', type: 'sell', usd: 30, btc: 0.0003, res: 0 },
+  ];
+  const p = await open({ storage: { seenHelp: '1', cfg: JSON.stringify(cfg), ledger: JSON.stringify(ledger) } });
+  const action = () => p.ev("document.getElementById('action').textContent");
+  try {
+    const before = await action();
+    assert.match(before, /^Compra 40,00 \$ esta semana: 20,00 \$ de aportación \+ 20,00 \$ de tu reserva/);
+    // Primera parte: 20 $, que salen de la reserva (lo propone el formulario)
+    await p.ev("document.querySelector('[data-mark]').click()");
+    await p.ev("document.getElementById('dUsd').value='20'");
+    await p.ev("document.querySelector('#doneForm button[type=submit]').click()");
+    const led = JSON.parse(await p.ev("localStorage.getItem('ledger')"));
+    assert.equal(led.at(-1).res, 20, 'la primera parte usa la reserva');
+    // El objetivo sigue siendo 40 $ (antes cambiaba a 30 $ porque la reserva ya se había gastado)
+    assert.equal(await action(), before);
+    assert.match(await p.ev("document.getElementById('done').textContent"), /^Llevas 20,00 \$ de 40,00 \$ esta semana\./);
+    // Lo que falta ya no usa reserva: no queda la que estaba prevista para esta semana
+    await p.ev("document.querySelector('[data-mark]').click()");
+    assert.equal(await p.ev("document.getElementById('dUsd').value"), '20.00');
+    await p.ev("document.querySelector('#doneForm button[type=submit]').click()");
+    assert.equal(JSON.parse(await p.ev("localStorage.getItem('ledger')")).at(-1).res, 0);
+    assert.match(await p.ev("document.getElementById('done').textContent"), /✓ Hecha: compraste .* por 40,00 \$/);
+    assert.deepEqual(p.errors, []);
   } finally { await p.close(); }
 });
 

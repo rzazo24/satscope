@@ -213,7 +213,7 @@ try{const t=localStorage.getItem('theme');if(t==='light'||t==='dark')document.do
     <li>Abre SatScope a partir del <strong>lunes</strong>. La señal sale del cierre semanal del domingo y no cambia en toda la semana.</li>
     <li>Lee la acción: <strong>Comprar</strong> (cuánto), <strong>Esperar</strong> o <strong>Vender</strong> (cuánto BTC).</li>
     <li>Haz la operación donde compres habitualmente, por ejemplo en Polygon.</li>
-    <li>Pulsa <strong>«Marcar como hecha»</strong> y corrige el importe y los BTC con lo que pagaste y recibiste de verdad.</li>
+    <li>Pulsa <strong>«Marcar como hecha»</strong> y corrige el importe y los BTC con lo que pagaste y recibiste de verdad. Si la haces en varias partes, apunta la primera y la app te dirá cuánto llevas, con un botón para apuntar lo que falta.</li>
   </ol>
   <p>Si quieres que te lo recuerde, usa <strong>«Recordatorio semanal»</strong> (en Tu cartera): añade a tu calendario un aviso cada lunes a las 9:00.</p>
 
@@ -340,7 +340,7 @@ try{const t=localStorage.getItem('theme');if(t==='light'||t==='dark')document.do
     <li>Open SatScope from <strong>Monday</strong> on. The signal comes from Sunday's weekly close and stays the same all week.</li>
     <li>Read the action: <strong>Buy</strong> (how much), <strong>Hold</strong> or <strong>Sell</strong> (how much BTC).</li>
     <li>Make the trade wherever you usually buy, for example on Polygon.</li>
-    <li>Tap <strong>"Mark as done"</strong> and correct the amount and BTC to what you actually paid and received.</li>
+    <li>Tap <strong>"Mark as done"</strong> and correct the amount and BTC to what you actually paid and received. If you do it in several parts, log the first one and the app will show how much you've done, with a button to log the rest.</li>
   </ol>
   <p>If you'd like a reminder, use <strong>"Weekly reminder"</strong> (under Your portfolio): it adds an alert to your calendar every Monday at 9:00.</p>
 
@@ -609,7 +609,7 @@ const I18N={
     chartAria:(mn,mx,last,sell)=>`Gráfico de la puntuación de las últimas 104 semanas: mínima ${mn}, máxima ${mx}, actual ${last}. Umbral de venta: ${sell}.`,
     btAria:(f,to,a,b)=>`Gráfico del valor de la cartera de ${f} a ${to}: tu estrategia termina en ${a} y el DCA fijo en ${b}.`,
     aSellBtc:(b,u)=>`Vende ${b} {U} esta semana (≈ ${u})`,
-    markDone:'Marcar como hecha',save:'Guardar',cancel:'Cancelar',undo:'Deshacer',undoQ:'¿Borrar esta operación del registro?',undoYes:'Sí, borrar',
+    markDone:'Marcar como hecha',save:'Guardar',cancel:'Cancelar',undo:'Deshacer',undoQ:a=>`¿Borrar del registro la operación de ${a}?`,partBuy:(a,b)=>`Llevas ${a} de ${b} esta semana.`,partSell:(a,b)=>`Llevas vendidos ${a} de ${b} {U} esta semana.`,addRest:'Apuntar lo que falta',undoYes:'Sí, borrar',
     fUsdBuy:'Importe pagado ($)',fBtcBuy:'{U} recibido',fBtcSell:'{U} vendido',fUsdSell:'Recibido ($)',
     doneBuy:(u,b)=>`Hecha: compraste ${b} {U} por ${u}`,doneSell:(u,b)=>`Hecha: vendiste ${b} {U} por ${u}`,
     pf:'Tu cartera',pfEmpty:'Aún no hay operaciones. Márcalas como hechas desde la acción de la semana o añádelas a mano.',
@@ -644,7 +644,7 @@ const I18N={
     chartAria:(mn,mx,last,sell)=>`Chart of the score over the last 104 weeks: low ${mn}, high ${mx}, current ${last}. Sell threshold: ${sell}.`,
     btAria:(f,to,a,b)=>`Chart of portfolio value from ${f} to ${to}: your strategy ends at ${a} and fixed DCA at ${b}.`,
     aSellBtc:(b,u)=>`Sell ${b} {U} this week (≈ ${u})`,
-    markDone:'Mark as done',save:'Save',cancel:'Cancel',undo:'Undo',undoQ:'Delete this trade from the log?',undoYes:'Yes, delete',
+    markDone:'Mark as done',save:'Save',cancel:'Cancel',undo:'Undo',undoQ:a=>`Delete the ${a} trade from the log?`,partBuy:(a,b)=>`You've done ${a} of ${b} this week.`,partSell:(a,b)=>`You've sold ${a} of ${b} {U} this week.`,addRest:'Log the rest',undoYes:'Yes, delete',
     fUsdBuy:'Amount paid ($)',fBtcBuy:'{U} received',fBtcSell:'{U} sold',fUsdSell:'Received ($)',
     doneBuy:(u,b)=>`Done: you bought ${b} {U} for ${u}`,doneSell:(u,b)=>`Done: you sold ${b} {U} for ${u}`,
     pf:'Your portfolio',pfEmpty:'No trades yet. Mark them as done from this week\'s action or add them by hand.',
@@ -899,6 +899,19 @@ async function wbtcBalance(addr){
   throw new Error('ningún nodo de Polygon ha respondido');
 }
 
+// Progreso de la operación de la semana. cur: objetivo ({kind,usd,btc,res}); ops: lo apuntado esta semana de
+// ese tipo; now: precio actual. Las compras se miden en dólares y las ventas en BTC. Se da por completa si lo que
+// falta es menos del 2 % (o de 0,50 $ en compras), para no pedir céntimos por comisiones o redondeos.
+function weekProgress(cur,ops,now){
+  const buy=cur.kind==='buy',usd=ops.reduce((a,o)=>a+o.usd,0),btc=ops.reduce((a,o)=>a+o.btc,0),res=ops.reduce((a,o)=>a+(o.res||0),0);
+  const target=buy?cur.usd:cur.btc,done=buy?usd:btc,left=Math.max(target-done,0);
+  const partial=ops.length>0&&left>Math.max(buy?0.5:0,target*0.02);
+  const rem=!ops.length?{usd:cur.usd,btc:cur.btc,res:cur.res||0}
+    :buy?{usd:left,btc:left/now,res:Math.max(0,Math.min((cur.res||0)-res,left))}
+    :{usd:left*now,btc:left,res:0};
+  return {usd,btc,target,done,left,partial,rem};
+}
+
 // Migración de ajustes: la versión anterior guardaba todos los valores; se conserva solo lo que
 // difería de sus valores por defecto, para que los valores por defecto nuevos lleguen a todos
 // (la función se declara aquí pero se usa al arrancar, así que no puede depender de constantes de más abajo)
@@ -925,7 +938,7 @@ function mergeOps(list,incoming){
   for(const o of incoming)if(!have.has(key(o))){out.push(o);have.add(key(o));added++}
   return {list:out,added};
 }
-let CUR=null,FORM=false,UNDO_ASK=null; // UNDO_ASK: operación de la semana pendiente de confirmar su borrado
+let CUR=null,FORM=false,UNDO_ASK=null,REM=null; // REM: lo que falta de la operación de la semana (lo que rellena el formulario) // UNDO_ASK: operación de la semana pendiente de confirmar su borrado
 let WALLET={addr:'',bal:null,status:'idle'},walletSeq=0; // status: idle | bad | loading | ok | err
 try{WALLET.addr=localStorage.getItem('wallet')||''}catch(e){}
 $('wallet').value=WALLET.addr;
@@ -988,17 +1001,21 @@ function render(){
   $('mark').style.left=sc+'%';
   const pill=$('pill'),t=T(),ev=EURX&&showEur();
   let hint='';const LS=ledgerStats();CUR={kind:'hold',t:r.t};
+  // Lo apuntado esta semana se descuenta para calcular el objetivo con la reserva y el BTC de antes: si no,
+  // al apuntar una parte el objetivo cambiaría (la reserva usada o el BTC vendido ya no estarían)
+  const wk=LEDGER.filter(o=>inWeek(o.d,r.t));
+  const wkRes=wk.filter(o=>o.type==='buy').reduce((a,o)=>a+o.res,0),wkSold=wk.filter(o=>o.type==='sell').reduce((a,o)=>a+o.btc,0);
   if(sell){
     pill.textContent=t.sell;pill.style.background='var(--sell)';
-    const q=held(LS)*c.sellPct/100;
+    const q=(held(LS)+wkSold)*c.sellPct/100;
     $('action').textContent=q>0?t.aSellBtc(fmt(q,6),usd(q*NOW,2)):t.aSell(fmt(c.sellPct));hint=t.hSell;
     CUR={kind:'sell',t:r.t,btc:q,usd:q*NOW,res:0};
   }
   else if(mult>0){
     pill.textContent=t.buy;pill.style.background='var(--buy)';
-    const buy=c.base*mult,useRes=sc<c.reuseBelow,res=useRes?Math.min(Math.max(LS.reserve,0),buy):0;
+    const resBefore=LS.reserve+wkRes,buy=c.base*mult,useRes=sc<c.reuseBelow,res=useRes?Math.min(Math.max(resBefore,0),buy):0;
     $('action').textContent=res>0?t.aBuyRes(usd(buy+res,2),usd(buy,2),usd(res,2)):t.aBuy(fmt(buy,2),fmt(mult,2));
-    if(useRes)hint=res>0?t.hResUsed(usd(LS.reserve-res,2)):t.hResEmpty;
+    if(useRes)hint=res>0?t.hResUsed(usd(resBefore-res,2)):t.hResEmpty;
     CUR={kind:'buy',t:r.t,usd:buy+res,btc:(buy+res)/NOW,res};
   }
   else{pill.textContent=t.hold;pill.style.background='var(--hold)';$('action').textContent=t.aHold}
@@ -1015,20 +1032,25 @@ function render(){
 function renderDone(){
   const t=T(),el=$('done');
   if(!CUR||(CUR.kind!=='buy'&&CUR.kind!=='sell')){el.innerHTML='';return}
-  const mine=LEDGER.filter(o=>o.type===CUR.kind&&inWeek(o.d,CUR.t));
-  if(mine.length){
-    const o=mine.at(-1);
-    // Deshacer pide confirmación: el primer toque solo pregunta; borrar exige «Sí, borrar»
-    el.innerHTML=UNDO_ASK===o.id
-      ?`<span>${t.undoQ}</span><button type="button" class="btn danger" data-undo-yes="${o.id}">${t.undoYes}</button><button type="button" class="btn" data-undo-no>${t.cancel}</button>`
-      :`<span class="ok">✓ ${(o.type==='buy'?t.doneBuy:t.doneSell)(usd(o.usd,2),fmt(o.btc,8))}</span><button type="button" class="lnk" data-undo-ask="${o.id}">${t.undo}</button>`;
-  }else if(FORM){
-    const buy=CUR.kind==='buy';
+  const mine=LEDGER.filter(o=>o.type===CUR.kind&&inWeek(o.d,CUR.t)),buy=CUR.kind==='buy';
+  const P=weekProgress(CUR,mine,NOW);REM=P.rem;
+  const last=mine.at(-1);
+  if(last&&UNDO_ASK===last.id){
+    // Deshacer pide confirmación: el primer toque solo pregunta; borrar exige «Sí, borrar». Se borra la última operación de la semana
+    el.innerHTML=`<span>${t.undoQ(usd(last.usd,2))}</span><button type="button" class="btn danger" data-undo-yes="${last.id}">${t.undoYes}</button><button type="button" class="btn" data-undo-no>${t.cancel}</button>`;
+  }else if(FORM&&(!mine.length||P.partial)){
     el.innerHTML=`<form id="doneForm">
-      <label>${buy?t.fUsdBuy:t.fUsdSell}<input type="number" id="dUsd" step="any" min="0" required value="${CUR.usd.toFixed(2)}"></label>
-      <label>${buy?t.fBtcBuy:t.fBtcSell}<input type="number" id="dBtc" step="any" min="0" required value="${CUR.btc.toFixed(8)}"></label>
+      <label>${buy?t.fUsdBuy:t.fUsdSell}<input type="number" id="dUsd" step="any" min="0" required value="${REM.usd.toFixed(2)}"></label>
+      <label>${buy?t.fBtcBuy:t.fBtcSell}<input type="number" id="dBtc" step="any" min="0" required value="${REM.btc.toFixed(8)}"></label>
       <button type="submit" class="btn pri">${t.save}</button><button type="button" class="btn" data-cancel>${t.cancel}</button></form>`;
-  }else el.innerHTML=`<button type="button" class="btn pri" data-mark>${t.markDone}</button>`;
+  }else if(!mine.length)el.innerHTML=`<button type="button" class="btn pri" data-mark>${t.markDone}</button>`;
+  else{
+    const undo=`<button type="button" class="lnk" data-undo-ask="${last.id}">${t.undo}</button>`;
+    // Compra o venta hecha en varias partes: lo que llevas, botón para apuntar lo que falta y totales al completarla
+    el.innerHTML=P.partial
+      ?`<span>${buy?t.partBuy(usd(P.done,2),usd(P.target,2)):t.partSell(fmt(P.done,8),fmt(P.target,8))}</span><button type="button" class="btn pri" data-mark>${t.addRest}</button>${undo}`
+      :`<span class="ok">✓ ${(buy?t.doneBuy:t.doneSell)(usd(P.usd,2),fmt(P.btc,8))}</span>${undo}`;
+  }
 }
 $('done').addEventListener('click',e=>{
   if(e.target.closest('[data-mark]')){FORM=true;renderDone();$('dUsd').focus()}
@@ -1040,7 +1062,7 @@ $('done').addEventListener('click',e=>{
 $('done').addEventListener('submit',e=>{
   e.preventDefault();const u=+$('dUsd').value,b=+$('dBtc').value;if(!(u>0&&b>0))return;
   if(CUR.kind==='sell'&&b>ledgerStats().btc+1e-9){$('dBtc').setCustomValidity(T().tooMuch(fmt(ledgerStats().btc,8)));$('dBtc').reportValidity();$('dBtc').oninput=()=>$('dBtc').setCustomValidity('');return}
-  LEDGER.push({id:newId(),d:today(),type:CUR.kind,usd:u,btc:b,res:CUR.kind==='buy'?Math.min(CUR.res,u):0});
+  LEDGER.push({id:newId(),d:today(),type:CUR.kind,usd:u,btc:b,res:CUR.kind==='buy'?Math.min(REM.res,u):0});
   FORM=false;saveLedger();
 });
 function renderWallet(LS){
