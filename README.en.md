@@ -51,7 +51,7 @@ You can change the weights, multipliers, base amount and sell threshold under "S
 - **WBTC on Polygon:** an option for the app to talk about WBTC and, if you give your public Polygon address, read your WBTC balance (read-only, via public nodes), compare it with the trade log and work out sales from the real balance.
 - **Backtest** from any year you choose: your strategy against fixed DCA. The main figure compares with a fixed DCA that invests the same money split equally every week, so it only measures whether the strategy buys better; fixed DCA with the base amount stays as a reference.
 - Light, dark or automatic theme.
-- Optional euro equivalent for the action and the price. The strategy and the log stay in dollars, since purchases are made in dollars (USDC) on Polygon.
+- Optional euro equivalent for the action and the price. The strategy and the log stay in dollars, since purchases are made with dollar stablecoins (USDT or USDC) on Polygon.
 - Weekly calendar reminder (.ics), every Monday at 9:00.
 - Fonts served from the site itself: nothing is requested from Google and the app works fully offline.
 - Installable as an app (PWA): works offline and lets you know when a new version is out.

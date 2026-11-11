@@ -1,6 +1,6 @@
 # SatScope
 
-Panel web de DCA dinámico para Bitcoin. Publicado en https://satscope-seven.vercel.app (repo público `rzazo24/satscope`). El usuario lo usa con dinero real: compra **WBTC en Polygon** con USDC una vez por semana.
+Panel web de DCA dinámico para Bitcoin. Publicado en https://satscope-seven.vercel.app (repo público `rzazo24/satscope`). El usuario lo usa con dinero real: compra **WBTC en Polygon** con USDT una vez por semana.
 
 Idioma del proyecto: **español** (código comentado en español, commits en español, respuestas al usuario en español). La interfaz es bilingüe ES/EN.
 
